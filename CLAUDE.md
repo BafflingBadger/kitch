@@ -35,16 +35,6 @@ Despite the name, [proxy.ts](proxy.ts) (project root) is this template's Next.js
 
 Supabase config uses `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (not the `NEXT_PUBLIC_` prefix Supabase's dashboard shows by default — both anon and publishable key formats work here). `hasEnvVars` in [lib/utils.ts](lib/utils.ts) gates whether auth UI or an `EnvVarWarning` is shown, and is checked in `updateSession` to no-op the proxy before Supabase is configured.
 
-### MCP setup
-
-[.mcp.json](.mcp.json) configures the Supabase MCP server via `${SUPABASE_PROJECT_REF}` — this keeps the project ref out of git (this repo is public) while still letting the config file itself be committed. Before starting Claude Code, export it in your shell:
-
-```bash
-export SUPABASE_PROJECT_REF=qopqoiphwsufpynuzilx
-```
-
-(Find the ref in the Supabase dashboard URL, or in `supabase/.temp/project-ref` after `supabase link`.) Without it set, `claude mcp list` will warn that the variable is unset and the Supabase MCP tools won't connect.
-
 ### Routes
 
 - `/` — marketing/tutorial landing page ([app/page.tsx](app/page.tsx)).
