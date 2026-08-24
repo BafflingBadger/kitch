@@ -51,6 +51,20 @@ export default {
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
         },
+        kitch: {
+          cream: "hsl(var(--kitch-cream))",
+          "cream-dark": "hsl(var(--kitch-cream-dark))",
+          charcoal: "hsl(var(--kitch-charcoal))",
+          grey: "hsl(var(--kitch-grey))",
+          red: "hsl(var(--kitch-red))",
+          "orange-from": "hsl(var(--kitch-orange-from))",
+          "orange-to": "hsl(var(--kitch-orange-to))",
+          peach: "hsl(var(--kitch-peach))",
+          "peach-foreground": "hsl(var(--kitch-peach-foreground))",
+        },
+      },
+      fontFamily: {
+        literata: ["var(--font-literata)"],
       },
       borderRadius: {
         lg: "var(--radius)",

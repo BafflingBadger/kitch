@@ -29,6 +29,16 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+
+    --kitch-cream: 30 55% 96%;
+    --kitch-cream-dark: 31 64% 92%;
+    --kitch-charcoal: 0 0% 10%;
+    --kitch-grey: 22 20% 38%;
+    --kitch-red: 5 55% 45%;
+    --kitch-orange-from: 14 100% 65%;
+    --kitch-orange-to: 6 78% 58%;
+    --kitch-peach: 20 65% 91%;
+    --kitch-peach-foreground: 6 60% 40%;
   }
   .dark {
     --background: 0 0% 3.9%;
