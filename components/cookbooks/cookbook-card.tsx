@@ -33,7 +33,7 @@ export function CookbookCard(props: CookbookCardProps) {
       <Link
         href={href}
         prefetch={false}
-        className="group relative row-span-1 col-span-2 block h-[400px] overflow-hidden rounded-2xl"
+        className="group relative row-span-1 col-span-2 block h-[366px] overflow-hidden rounded-2xl"
       >
         <CoverImage imageUrl={props.imageUrl} alt={props.title} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
@@ -50,14 +50,14 @@ export function CookbookCard(props: CookbookCardProps) {
       <Link
         href={href}
         prefetch={false}
-        className="group flex h-[400px] flex-col overflow-hidden rounded-2xl border border-kitch-charcoal/10 bg-white shadow-sm transition-shadow hover:shadow-md"
+        className="group flex h-[366px] flex-col overflow-hidden rounded-2xl border border-kitch-charcoal/10 bg-white shadow-sm transition-shadow hover:shadow-md"
       >
         <div className="h-[190px] shrink-0 overflow-hidden">
           <CoverImage imageUrl={props.imageUrl} alt={props.title} />
         </div>
         <div className="flex flex-1 flex-col justify-between p-5">
           <div>
-            <h3 className="font-literata text-xl font-semibold text-kitch-charcoal">
+            <h3 className="line-clamp-3 font-literata text-xl font-semibold text-kitch-charcoal">
               {props.title}
             </h3>
             {props.subtitle ? (
@@ -82,7 +82,7 @@ export function CookbookCard(props: CookbookCardProps) {
       href={href}
       prefetch={false}
       className={cn(
-        "flex h-[400px] flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-kitch-grey/30 text-center transition-colors hover:border-kitch-grey/50 hover:bg-kitch-cream-dark",
+        "flex h-[366px] flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-kitch-grey/30 text-center transition-colors hover:border-kitch-grey/50 hover:bg-kitch-cream-dark",
       )}
     >
       <span className="flex h-12 w-12 items-center justify-center rounded-full bg-kitch-cream-dark text-kitch-charcoal">
