@@ -22,7 +22,7 @@ import { LogoutButton } from "@/components/logout-button";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/cookbooks", label: "Cookbooks", icon: BookOpen },
+  { href: "/cookbooks", label: "Cookbooks", icon: BookOpen, activePrefixes: ["/recipes"] },
   { href: "/meal-prep", label: "Meal Plan", icon: Calendar },
   { href: "/grocery-list", label: "Grocery List", icon: ShoppingCart },
 ];
@@ -67,7 +67,11 @@ export function CookbookSidebar({
         <nav className="mt-8 flex flex-col gap-1">
           {navItems.map((item) => {
             const isActive =
-              pathname === item.href || pathname.startsWith(`${item.href}/`);
+              pathname === item.href ||
+              pathname.startsWith(`${item.href}/`) ||
+              item.activePrefixes?.some(
+                (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+              );
             const Icon = item.icon;
             return (
               <Link

@@ -9,7 +9,15 @@ export interface RecipeGridItem {
   createdAt: number;
 }
 
-export function RecipeGrid({ recipes }: { recipes: RecipeGridItem[] }) {
+export function RecipeGrid({
+  recipes,
+  backHref,
+  backLabel,
+}: {
+  recipes: RecipeGridItem[];
+  backHref?: string;
+  backLabel?: string;
+}) {
   if (recipes.length === 0) {
     return (
       <p className="text-sm text-kitch-grey">No recipes in this cookbook yet.</p>
@@ -26,6 +34,8 @@ export function RecipeGrid({ recipes }: { recipes: RecipeGridItem[] }) {
           imageUrl={recipe.imageUrl}
           source={recipe.source}
           rating={recipe.rating}
+          backHref={backHref}
+          backLabel={backLabel}
         />
       ))}
     </div>

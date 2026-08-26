@@ -74,7 +74,13 @@ async function CookbookDetailContent({
     createdAt: new Date(recipe.created_at).getTime(),
   }));
 
-  return <RecipeSortToggle title={title} recipes={recipes} />;
+  return (
+    <RecipeSortToggle
+      title={title}
+      recipes={recipes}
+      backHref={`/cookbooks/${cookbookId}`}
+    />
+  );
 }
 
 export default function CookbookDetailPage({

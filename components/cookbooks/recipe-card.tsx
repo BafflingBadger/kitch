@@ -44,14 +44,29 @@ export interface RecipeCardProps {
   imageUrl: string | null;
   source: string | null;
   rating: number;
+  backHref?: string;
+  backLabel?: string;
 }
 
-export function RecipeCard({ id, title, imageUrl, source, rating }: RecipeCardProps) {
+export function RecipeCard({
+  id,
+  title,
+  imageUrl,
+  source,
+  rating,
+  backHref,
+  backLabel,
+}: RecipeCardProps) {
   const { label, icon: Icon, className } = sourceMeta(source);
+
+  const query = new URLSearchParams();
+  if (backHref) query.set("backHref", backHref);
+  if (backLabel) query.set("backLabel", backLabel);
+  const href = query.size > 0 ? `/recipes/${id}?${query.toString()}` : `/recipes/${id}`;
 
   return (
     <Link
-      href={`/recipes/${id}`}
+      href={href}
       prefetch={false}
       className="group flex h-[366px] flex-col overflow-hidden rounded-2xl border border-kitch-charcoal/10 bg-white shadow-sm transition-shadow hover:shadow-md"
     >

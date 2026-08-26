@@ -26,9 +26,11 @@ function relativeUpdateLabel(recipes: RecipeGridItem[]) {
 export function RecipeSortToggle({
   title,
   recipes,
+  backHref,
 }: {
   title: string;
   recipes: RecipeGridItem[];
+  backHref: string;
 }) {
   const [sort, setSort] = useState<SortMode>("recent");
 
@@ -82,7 +84,7 @@ export function RecipeSortToggle({
       </div>
 
       <div className="mt-8">
-        <RecipeGrid recipes={sortedRecipes} />
+        <RecipeGrid recipes={sortedRecipes} backHref={backHref} backLabel={title} />
       </div>
     </div>
   );
