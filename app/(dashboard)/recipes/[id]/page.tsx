@@ -59,6 +59,7 @@ async function RecipeDetailContent({
   return (
     <div>
       <RecipeHeader
+        recipeId={recipe.id}
         backHref={backHref ?? "/cookbooks"}
         backLabel={backLabel ?? "Cookbooks"}
       />
