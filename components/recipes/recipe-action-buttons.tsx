@@ -4,12 +4,21 @@ import { useState } from "react";
 import { BookOpen, Calendar, Check, Share2, ShoppingCart } from "lucide-react";
 
 import { ManageCookbooksDialog } from "@/components/recipes/manage-cookbooks-dialog";
+import { AddMealDialog } from "@/components/meal-plan/add-meal-dialog";
 import { cn } from "@/lib/utils";
 
 const buttonClassName =
   "flex flex-1 items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-kitch-grey transition-colors hover:text-kitch-charcoal";
 
-export function RecipeActionButtons({ recipeId }: { recipeId: number }) {
+export function RecipeActionButtons({
+  recipeId,
+  recipeName,
+  imageUrl,
+}: {
+  recipeId: number;
+  recipeName: string;
+  imageUrl: string | null;
+}) {
   const [copied, setCopied] = useState(false);
 
   const handleShare = async () => {
@@ -35,10 +44,15 @@ export function RecipeActionButtons({ recipeId }: { recipeId: number }) {
           </button>
         }
       />
-      <button type="button" className={buttonClassName}>
-        <Calendar className="h-4 w-4" />
-        Meal Plan
-      </button>
+      <AddMealDialog
+        recipe={{ id: recipeId, name: recipeName, imageUrl }}
+        trigger={
+          <button type="button" className={buttonClassName}>
+            <Calendar className="h-4 w-4" />
+            Meal Plan
+          </button>
+        }
+      />
       <button type="button" className={buttonClassName}>
         <ShoppingCart className="h-4 w-4" />
         Grocery List

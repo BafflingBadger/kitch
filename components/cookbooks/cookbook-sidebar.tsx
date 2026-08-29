@@ -56,7 +56,7 @@ export function CookbookSidebar({
             height={34}
             className="object-contain"
           />
-          <span className="font-literata text-3xl font-bold text-kitch-red">
+          <span className="font-literata text-3xl font-bold text-[#B23E34]">
             Kitch
           </span>
         </div>

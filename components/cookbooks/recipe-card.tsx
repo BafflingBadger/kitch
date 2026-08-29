@@ -30,7 +30,7 @@ const SOURCE_META: Record<
   },
 };
 
-function sourceMeta(source: string | null) {
+export function sourceMeta(source: string | null) {
   const trimmed = source?.trim().toLowerCase();
   if (trimmed === "facebook" || trimmed === "instagram" || trimmed === "tiktok") {
     return SOURCE_META[trimmed];
