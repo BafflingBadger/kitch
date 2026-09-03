@@ -68,6 +68,29 @@ export function formatShortDateLabel(date: Date): string {
   return `${WEEKDAY_SHORT_LABELS[date.getDay()]}, ${MONTH_LABELS[date.getMonth()]} ${date.getDate()}`;
 }
 
+export function formatLongDateLabel(date: Date): string {
+  return `${MONTH_LABELS[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+}
+
+const MONTH_LABELS_FULL = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+export function formatMonthYearLabel(date: Date): string {
+  return `${MONTH_LABELS_FULL[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+export function getCalendarGridDates(monthDate: Date): Date[] {
+  const firstOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+  const gridStart = startOfWeekMonday(firstOfMonth);
+  return Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
+}
+
+export function addMonths(date: Date, months: number): Date {
+  return new Date(date.getFullYear(), date.getMonth() + months, 1);
+}
+
 export function formatWeekRangeLabel(start: Date, end: Date): string {
   const startMonth = MONTH_LABELS[start.getMonth()];
   const endMonth = MONTH_LABELS[end.getMonth()];

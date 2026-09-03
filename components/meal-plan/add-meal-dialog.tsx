@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { DatePickerDropdown } from "@/components/meal-plan/date-picker-dropdown";
 import { CoverImage } from "@/components/cookbooks/cover-image";
 import { sourceMeta } from "@/components/cookbooks/recipe-card";
 import {
@@ -232,15 +233,10 @@ export function AddMealDialog(props: AddMealDialogProps) {
                 </span>
                 <span className="text-sm font-medium text-kitch-charcoal">{recipe.name}</span>
               </div>
-              <label className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1.5">
                 <span className="text-xs font-medium text-kitch-grey">Date</span>
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(event) => setSelectedDate(event.target.value)}
-                  className="flex h-9 w-full rounded-md border border-kitch-charcoal/15 bg-white px-3 py-1 text-sm text-kitch-charcoal shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                />
-              </label>
+                <DatePickerDropdown value={selectedDate} onChange={setSelectedDate} />
+              </div>
               {error ? <p className="text-sm text-kitch-red">{error}</p> : null}
             </>
           ) : (
