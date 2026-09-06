@@ -200,7 +200,7 @@ export function AddMealDialog(props: AddMealDialogProps) {
 
         <div
           className={cn(
-            "flex flex-col gap-4 px-6 pb-6 pt-2",
+            "flex flex-col gap-4 px-6 pb-4 pt-2",
             isRecipeGridStep && "flex-1 overflow-hidden",
           )}
         >
@@ -394,7 +394,7 @@ export function AddMealDialog(props: AddMealDialogProps) {
         </div>
 
         {step === "target" && recipe ? (
-          <DialogFooter className="border-t border-kitch-charcoal/10 p-6 pt-4">
+          <DialogFooter className="p-6 pt-3">
             <Button
               type="button"
               onClick={() => submitEntry(recipe.id, selectedDate, selectedType!)}

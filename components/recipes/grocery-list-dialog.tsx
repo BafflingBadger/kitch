@@ -86,14 +86,14 @@ export function GroceryListDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="p-0">
-        <DialogHeader className="gap-1 border-b border-kitch-charcoal/10 p-6 pb-5 text-left">
+        <DialogHeader className="gap-1 p-6 pb-3 text-left">
           <DialogTitle className="text-xl">Add to Grocery List</DialogTitle>
           <DialogDescription>
             Choose which ingredients from {recipeName} to add.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="px-6 py-4">
+        <div className="px-6 pb-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wide text-kitch-charcoal/70">
               {selectedIds.size} of {selectableItems.length} selected
@@ -142,8 +142,13 @@ export function GroceryListDialog({
           {error ? <p className="mt-3 text-sm text-kitch-red">{error}</p> : null}
         </div>
 
-        <DialogFooter className="border-t border-kitch-charcoal/10 p-6 pt-4">
-          <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+        <DialogFooter className="p-6 pt-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setOpen(false)}
+            className="border-kitch-charcoal/10 bg-kitch-cream text-kitch-charcoal shadow-none hover:bg-kitch-cream-dark hover:text-kitch-charcoal"
+          >
             Cancel
           </Button>
           <Button

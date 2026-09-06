@@ -126,14 +126,14 @@ export function ManageCookbooksDialog({
     >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="p-0">
-        <DialogHeader className="gap-1 border-b border-kitch-charcoal/10 p-6 pb-5 text-left">
+        <DialogHeader className="gap-1 p-6 pb-3 text-left">
           <DialogTitle className="text-xl">Manage Cookbooks</DialogTitle>
           <DialogDescription>
             Choose which cookbooks this recipe belongs to, or create a new one.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="max-h-[320px] overflow-y-auto px-6 py-4">
+        <div className="max-h-[320px] overflow-y-auto px-6 pb-4">
           {loading ? (
             <p className="py-4 text-center text-sm text-kitch-grey">Loading…</p>
           ) : cookbooks.length === 0 ? (
@@ -228,7 +228,7 @@ export function ManageCookbooksDialog({
           {error ? <p className="mt-3 text-sm text-kitch-red">{error}</p> : null}
         </div>
 
-        <DialogFooter className="border-t border-kitch-charcoal/10 p-6 pt-4 sm:justify-between">
+        <DialogFooter className="p-6 pt-3 sm:justify-between">
           <span className="self-center text-xs text-kitch-grey">
             {selectedIds.size} selected
           </span>
