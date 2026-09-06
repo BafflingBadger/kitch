@@ -1,15 +1,15 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   addGroceryItem,
-  clearActiveGroceryItems,
   clearCheckedGroceryItems,
   deleteGroceryItem,
+  renameGroceryItem,
   setGroceryItemChecked,
 } from "@/app/(dashboard)/grocery-list/actions";
 
@@ -26,13 +26,18 @@ export function GroceryList({ initialItems }: { initialItems: GroceryItem[] }) {
   const [error, setError] = useState<string | null>(null);
   const [isAdding, startAdding] = useTransition();
   const [isClearing, startClearing] = useTransition();
-  const [isResetting, startResetting] = useTransition();
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingValue, setEditingValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const activeItems = items.filter((item) => !item.checked);
   const checkedItems = [...items]
     .filter((item) => item.checked)
     .sort((a, b) => (b.checkedAt ?? "").localeCompare(a.checkedAt ?? ""));
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   function handleAdd() {
     const name = newItemName.trim();
@@ -83,11 +88,20 @@ export function GroceryList({ initialItems }: { initialItems: GroceryItem[] }) {
     });
   }
 
-  function handleDelete(id: number) {
+  function startEditing(item: GroceryItem) {
+    setEditingId(item.id);
+    setEditingValue(item.name);
+  }
+
+  function commitEdit(item: GroceryItem) {
+    setEditingId(null);
+    const trimmed = editingValue.trim();
+    if (!trimmed || trimmed === item.name) return;
+
     setError(null);
     const previous = items;
-    setItems((prev) => prev.filter((item) => item.id !== id));
-    void deleteGroceryItem(id).then((result) => {
+    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, name: trimmed } : i)));
+    void renameGroceryItem(item.id, trimmed).then((result) => {
       if (!result.ok) {
         setItems(previous);
         setError(result.error);
@@ -95,12 +109,11 @@ export function GroceryList({ initialItems }: { initialItems: GroceryItem[] }) {
     });
   }
 
-  function handleResetActive() {
+  function handleDelete(id: number) {
     setError(null);
     const previous = items;
-    setItems((prev) => prev.filter((item) => item.checked));
-    startResetting(async () => {
-      const result = await clearActiveGroceryItems();
+    setItems((prev) => prev.filter((item) => item.id !== id));
+    void deleteGroceryItem(id).then((result) => {
       if (!result.ok) {
         setItems(previous);
         setError(result.error);
@@ -123,97 +136,83 @@ export function GroceryList({ initialItems }: { initialItems: GroceryItem[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="md:max-w-[calc(50%-0.75rem)]">
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            handleAdd();
-          }}
-          className="flex items-center gap-2 rounded-full border border-kitch-charcoal/10 bg-white py-1.5 pl-4 pr-1.5 shadow-sm"
-        >
-          <Plus className="h-4 w-4 shrink-0 text-kitch-grey" />
-          <input
-            ref={inputRef}
-            value={newItemName}
-            onChange={(event) => setNewItemName(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.nativeEvent.isComposing) {
-                event.preventDefault();
-                handleAdd();
-              }
-            }}
-            placeholder="Add an item…"
-            className="flex-1 bg-transparent text-sm text-kitch-charcoal placeholder:text-kitch-grey focus:outline-none"
-          />
-          <Button
-            type="submit"
-            disabled={isAdding || !newItemName.trim()}
-            className="shrink-0 gap-1.5 rounded-full bg-gradient-to-r from-kitch-orange-from to-kitch-orange-to px-4 text-white shadow-sm hover:opacity-90"
-          >
-            <Plus className="h-4 w-4" />
-            Add
-          </Button>
-        </form>
-        {error ? <p className="mt-2 text-sm text-kitch-red">{error}</p> : null}
-      </div>
+      {error ? <p className="text-sm text-kitch-red">{error}</p> : null}
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="rounded-xl border border-kitch-charcoal/10 bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between px-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-kitch-grey">
-              To Buy ({activeItems.length})
-            </h2>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleResetActive}
-              disabled={isResetting || activeItems.length === 0}
-              className="font-bold text-kitch-red hover:bg-kitch-peach hover:text-kitch-red"
-            >
-              Clear All
-            </Button>
+          <div className="flex items-center justify-end px-3">
+            <span className="text-sm text-kitch-grey">
+              {activeItems.length} {activeItems.length === 1 ? "item" : "items"}
+            </span>
           </div>
-          {activeItems.length === 0 ? (
-            <p className="px-3 py-2.5 text-sm text-kitch-grey">
-              Your grocery list is empty. Add an item above to get started.
-            </p>
-          ) : (
-            <ul className="mt-2 flex flex-col gap-1">
-              {activeItems.map((item) => (
-                <li key={item.id} className="group">
-                  <label className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-kitch-cream-dark">
-                    <Checkbox
-                      checked={item.checked}
-                      onCheckedChange={(checked) => handleToggle(item.id, checked === true)}
-                      className="border-kitch-charcoal/30 data-[state=checked]:border-kitch-orange-to data-[state=checked]:bg-kitch-orange-to"
-                    />
-                    <span className="flex-1 text-sm font-medium text-kitch-charcoal">
-                      {item.name}
-                    </span>
-                    <button
-                      type="button"
-                      aria-label={`Remove ${item.name}`}
-                      onClick={(event) => {
+          <ul className="mt-2 flex flex-col gap-1">
+            {activeItems.map((item) => (
+              <li key={item.id} className="group">
+                <div className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-kitch-cream-dark">
+                  <Checkbox
+                    checked={item.checked}
+                    onCheckedChange={(checked) => handleToggle(item.id, checked === true)}
+                    className="border-kitch-charcoal/30 data-[state=checked]:border-kitch-orange-to data-[state=checked]:bg-kitch-orange-to"
+                  />
+                  <input
+                    value={editingId === item.id ? editingValue : item.name}
+                    readOnly={editingId !== item.id}
+                    onFocus={() => startEditing(item)}
+                    onChange={(event) => setEditingValue(event.target.value)}
+                    onBlur={() => commitEdit(item)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && !event.nativeEvent.isComposing) {
                         event.preventDefault();
-                        handleDelete(item.id);
-                      }}
-                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-kitch-grey opacity-0 transition-opacity hover:bg-kitch-charcoal/10 hover:text-kitch-charcoal group-hover:opacity-100"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </label>
-                </li>
-              ))}
-            </ul>
-          )}
+                        event.currentTarget.blur();
+                      }
+                    }}
+                    className="flex-1 bg-transparent text-sm font-medium text-kitch-charcoal focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    aria-label={`Remove ${item.name}`}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      handleDelete(item.id);
+                    }}
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-kitch-grey opacity-0 transition-opacity hover:bg-kitch-charcoal/10 hover:text-kitch-charcoal group-hover:opacity-100"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <div className="flex items-center gap-3 rounded-xl px-3 py-2.5">
+            <Checkbox checked={false} disabled className="border-kitch-charcoal/30" />
+            <input
+              ref={inputRef}
+              value={newItemName}
+              onChange={(event) => setNewItemName(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                  event.preventDefault();
+                  handleAdd();
+                }
+              }}
+              placeholder="Add an item…"
+              className="flex-1 bg-transparent text-sm text-kitch-charcoal placeholder:text-kitch-grey placeholder:opacity-60 focus:outline-none"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={isAdding || !newItemName.trim()}
+            className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-kitch-grey transition-colors hover:bg-kitch-cream-dark hover:text-kitch-charcoal disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-kitch-grey"
+          >
+            <Plus className="h-4 w-4" />
+            Add item
+          </button>
         </div>
 
-        <div className="rounded-xl border border-kitch-charcoal/10 bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between px-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-kitch-grey">
-              Checked ({checkedItems.length})
-            </h2>
+        <div className="flex flex-col rounded-xl border border-kitch-charcoal/10 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-end px-3">
             <Button
               type="button"
               variant="ghost"
@@ -226,23 +225,36 @@ export function GroceryList({ initialItems }: { initialItems: GroceryItem[] }) {
             </Button>
           </div>
           {checkedItems.length === 0 ? (
-            <p className="px-3 py-2.5 text-sm text-kitch-grey">
-              Items you check off will show up here.
-            </p>
+            <div className="flex flex-1 items-center justify-center">
+              <p className="text-sm text-kitch-grey">Checked items will show up here.</p>
+            </div>
           ) : (
             <ul className="mt-2 flex flex-col gap-1">
               {checkedItems.map((item) => (
                 <li key={item.id}>
-                  <label className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-kitch-cream-dark">
+                  <div className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-kitch-cream-dark">
                     <Checkbox
                       checked={item.checked}
                       onCheckedChange={(checked) => handleToggle(item.id, checked === true)}
                       className="border-kitch-charcoal/30 data-[state=checked]:border-kitch-orange-to data-[state=checked]:bg-kitch-orange-to"
                     />
-                    <span className="flex-1 text-sm font-medium text-kitch-grey line-through">
-                      {item.name}
-                    </span>
-                  </label>
+                    <input
+                      value={editingId === item.id ? editingValue : item.name}
+                      readOnly={editingId !== item.id}
+                      onFocus={() => startEditing(item)}
+                      onChange={(event) => setEditingValue(event.target.value)}
+                      onBlur={() => commitEdit(item)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                          event.preventDefault();
+                          event.currentTarget.blur();
+                        }
+                      }}
+                      className={`flex-1 bg-transparent text-sm font-medium text-kitch-grey focus:outline-none ${
+                        editingId === item.id ? "" : "line-through"
+                      }`}
+                    />
+                  </div>
                 </li>
               ))}
             </ul>

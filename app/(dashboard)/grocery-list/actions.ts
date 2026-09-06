@@ -32,6 +32,32 @@ export async function addGroceryItem(name: string) {
   return { ok: true as const, item: data };
 }
 
+export async function addGroceryItems(names: string[]) {
+  const trimmedNames = names.map((name) => name.trim()).filter(Boolean);
+  if (trimmedNames.length === 0) {
+    return { ok: false as const, error: "No items to add" };
+  }
+
+  const supabase = await createClient();
+  const { data: claimsData, error: authError } = await supabase.auth.getClaims();
+  if (authError || !claimsData?.claims) {
+    return { ok: false as const, error: "Not authenticated" };
+  }
+  const userId = claimsData.claims.sub;
+
+  const { error } = await supabase
+    .from("grocery_list")
+    .insert(trimmedNames.map((name) => ({ name, user_id: userId })));
+
+  if (error) {
+    return { ok: false as const, error: error.message };
+  }
+
+  revalidatePath("/grocery-list");
+
+  return { ok: true as const };
+}
+
 export async function setGroceryItemChecked(itemId: number, checked: boolean) {
   if (!Number.isInteger(itemId) || itemId <= 0) {
     return { ok: false as const, error: "Invalid item id" };
@@ -47,6 +73,37 @@ export async function setGroceryItemChecked(itemId: number, checked: boolean) {
   const { error } = await supabase
     .from("grocery_list")
     .update({ checked, checked_at: checked ? new Date().toISOString() : null })
+    .eq("id", itemId)
+    .eq("user_id", userId);
+
+  if (error) {
+    return { ok: false as const, error: error.message };
+  }
+
+  revalidatePath("/grocery-list");
+
+  return { ok: true as const };
+}
+
+export async function renameGroceryItem(itemId: number, name: string) {
+  if (!Number.isInteger(itemId) || itemId <= 0) {
+    return { ok: false as const, error: "Invalid item id" };
+  }
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return { ok: false as const, error: "Item name is required" };
+  }
+
+  const supabase = await createClient();
+  const { data: claimsData, error: authError } = await supabase.auth.getClaims();
+  if (authError || !claimsData?.claims) {
+    return { ok: false as const, error: "Not authenticated" };
+  }
+  const userId = claimsData.claims.sub;
+
+  const { error } = await supabase
+    .from("grocery_list")
+    .update({ name: trimmed })
     .eq("id", itemId)
     .eq("user_id", userId);
 
@@ -99,29 +156,6 @@ export async function clearCheckedGroceryItems() {
     .delete()
     .eq("user_id", userId)
     .eq("checked", true);
-
-  if (error) {
-    return { ok: false as const, error: error.message };
-  }
-
-  revalidatePath("/grocery-list");
-
-  return { ok: true as const };
-}
-
-export async function clearActiveGroceryItems() {
-  const supabase = await createClient();
-  const { data: claimsData, error: authError } = await supabase.auth.getClaims();
-  if (authError || !claimsData?.claims) {
-    return { ok: false as const, error: "Not authenticated" };
-  }
-  const userId = claimsData.claims.sub;
-
-  const { error } = await supabase
-    .from("grocery_list")
-    .delete()
-    .eq("user_id", userId)
-    .eq("checked", false);
 
   if (error) {
     return { ok: false as const, error: error.message };

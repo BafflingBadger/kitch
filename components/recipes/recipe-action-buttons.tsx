@@ -5,6 +5,8 @@ import { BookOpen, Calendar, Check, Share2, ShoppingCart } from "lucide-react";
 
 import { ManageCookbooksDialog } from "@/components/recipes/manage-cookbooks-dialog";
 import { AddMealDialog } from "@/components/meal-plan/add-meal-dialog";
+import { GroceryListDialog } from "@/components/recipes/grocery-list-dialog";
+import type { RecipeIngredientItem } from "@/components/recipes/recipe-ingredients";
 import { cn } from "@/lib/utils";
 
 const buttonClassName =
@@ -14,10 +16,12 @@ export function RecipeActionButtons({
   recipeId,
   recipeName,
   imageUrl,
+  ingredients,
 }: {
   recipeId: number;
   recipeName: string;
   imageUrl: string | null;
+  ingredients: RecipeIngredientItem[];
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -53,10 +57,16 @@ export function RecipeActionButtons({
           </button>
         }
       />
-      <button type="button" className={buttonClassName}>
-        <ShoppingCart className="h-4 w-4" />
-        Grocery List
-      </button>
+      <GroceryListDialog
+        recipeName={recipeName}
+        ingredients={ingredients}
+        trigger={
+          <button type="button" className={buttonClassName}>
+            <ShoppingCart className="h-4 w-4" />
+            Grocery List
+          </button>
+        }
+      />
       <button
         type="button"
         onClick={handleShare}

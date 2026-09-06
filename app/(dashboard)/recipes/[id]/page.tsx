@@ -80,7 +80,12 @@ async function RecipeDetailContent({
             <StarRating recipeId={recipe.id} initialRating={recipe.rating ?? 0} />
           </div>
           <div className="mt-5">
-            <RecipeActionButtons recipeId={recipe.id} recipeName={recipe.name} imageUrl={imageUrl} />
+            <RecipeActionButtons
+              recipeId={recipe.id}
+              recipeName={recipe.name}
+              imageUrl={imageUrl}
+              ingredients={ingredientRows ?? []}
+            />
           </div>
         </div>
       </div>
