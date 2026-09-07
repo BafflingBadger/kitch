@@ -32,6 +32,7 @@ async function CookbookDetailContent({
 
   let title = "All Recipes";
   let recipeRows: RecipeRow[] = [];
+  let numericCookbookId: number | null = null;
 
   if (cookbookId === "all") {
     const { data } = await supabase
@@ -43,6 +44,7 @@ async function CookbookDetailContent({
   } else {
     const numericId = Number(cookbookId);
     if (!Number.isInteger(numericId)) notFound();
+    numericCookbookId = numericId;
 
     const { data: cookbook } = await supabase
       .from("cookbooks")
@@ -79,6 +81,7 @@ async function CookbookDetailContent({
       title={title}
       recipes={recipes}
       backHref={`/cookbooks/${cookbookId}`}
+      cookbookId={numericCookbookId}
     />
   );
 }

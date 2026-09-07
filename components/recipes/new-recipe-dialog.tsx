@@ -37,7 +37,7 @@ export function NewRecipeDialog({ trigger }: { trigger: ReactNode }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="bg-white sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>New Recipe</DialogTitle>
           <DialogDescription>

@@ -47,6 +47,7 @@ async function CookbooksContent() {
   const [
     { data: cookbookRows },
     { data: latestMappings },
+    { data: chosenThumbnails },
     { data: recentRecipes, count: recipeCount },
   ] = await Promise.all([
     supabase
@@ -59,6 +60,12 @@ async function CookbooksContent() {
       .select("cookbook_id, created_at, recipes(thumbnail), cookbooks!inner(user_id)")
       .eq("cookbooks.user_id", userId)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("cookbook_thumbnail_mapping")
+      .select("cookbook_id, recipes(thumbnail), cookbooks!inner(user_id)")
+      // "order" is quoted because it collides with PostgREST's reserved ?order= sort param.
+      .eq('"order"' as "order", 0)
+      .eq("cookbooks.user_id", userId),
     supabase
       .from("recipes")
       .select("id, created_at", { count: "exact" })
@@ -77,11 +84,20 @@ async function CookbooksContent() {
     }
   }
 
+  const chosenThumbnailByCookbook = new Map<number, string | null>();
+  for (const mapping of chosenThumbnails ?? []) {
+    if (mapping.cookbook_id !== null) {
+      chosenThumbnailByCookbook.set(mapping.cookbook_id, mapping.recipes?.thumbnail ?? null);
+    }
+  }
+
   const cookbooks = (cookbookRows ?? []).map((row) => ({
     id: row.id,
     title: row.title,
     count: row.recipes_mapping?.[0]?.count ?? 0,
-    imageUrl: recipeThumbnailUrl(latestThumbnailByCookbook.get(row.id)),
+    imageUrl: recipeThumbnailUrl(
+      chosenThumbnailByCookbook.get(row.id) ?? latestThumbnailByCookbook.get(row.id),
+    ),
   }));
 
   const allRecipes = {

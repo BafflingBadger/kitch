@@ -160,7 +160,7 @@ export function AddMealDialog(props: AddMealDialogProps) {
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent
         className={cn(
-          "bg-white p-0 sm:max-w-2xl",
+          "p-0 sm:max-w-2xl",
           isRecipeGridStep ? "flex h-[85vh] flex-col" : "max-h-[85vh] overflow-y-auto",
         )}
       >

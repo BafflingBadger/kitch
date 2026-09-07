@@ -147,7 +147,7 @@ export function GroceryListDialog({
             type="button"
             variant="outline"
             onClick={() => setOpen(false)}
-            className="border-kitch-charcoal/10 bg-kitch-cream text-kitch-charcoal shadow-none hover:bg-kitch-cream-dark hover:text-kitch-charcoal"
+            className="border-kitch-charcoal/10 bg-white text-kitch-charcoal shadow-none hover:bg-kitch-cream-dark hover:text-kitch-charcoal"
           >
             Cancel
           </Button>

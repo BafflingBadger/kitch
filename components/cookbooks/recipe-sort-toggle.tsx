@@ -2,9 +2,11 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 
 import { RecipeGrid, type RecipeGridItem } from "@/components/cookbooks/recipe-grid";
+import { EditCookbookDialog } from "@/components/cookbooks/edit-cookbook-dialog";
+import { DeleteCookbookDialog } from "@/components/cookbooks/delete-cookbook-dialog";
 import { cn } from "@/lib/utils";
 
 const SORT_OPTIONS = [
@@ -27,10 +29,12 @@ export function RecipeSortToggle({
   title,
   recipes,
   backHref,
+  cookbookId,
 }: {
   title: string;
   recipes: RecipeGridItem[];
   backHref: string;
+  cookbookId: number | null;
 }) {
   const [sort, setSort] = useState<SortMode>("recent");
 
@@ -48,17 +52,46 @@ export function RecipeSortToggle({
 
   return (
     <div>
-      <Link
-        href="/cookbooks"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-kitch-grey transition-colors hover:text-kitch-charcoal"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Cookbooks / {title}
-      </Link>
+      <div className="flex items-center justify-between gap-4">
+        <Link
+          href="/cookbooks"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-kitch-grey transition-colors hover:text-kitch-charcoal"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Cookbooks
+        </Link>
+        {cookbookId !== null ? (
+          <div className="flex shrink-0 items-center gap-2">
+            <EditCookbookDialog
+              cookbookId={cookbookId}
+              trigger={
+                <button
+                  type="button"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-kitch-charcoal/10 px-4 py-2 text-sm font-medium text-kitch-charcoal transition-colors hover:bg-kitch-cream-dark"
+                >
+                  <Pencil className="h-4 w-4" />
+                  Edit
+                </button>
+              }
+            />
+            <DeleteCookbookDialog
+              cookbookId={cookbookId}
+              cookbookTitle={title}
+              trigger={
+                <button
+                  type="button"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-kitch-red/20 px-4 py-2 text-sm font-medium text-kitch-red transition-colors hover:bg-kitch-red/10"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </button>
+              }
+            />
+          </div>
+        ) : null}
+      </div>
 
-      <h1 className="mt-4 font-literata text-4xl font-semibold text-kitch-charcoal">
-        {title}
-      </h1>
+      <h1 className="mt-4 font-literata text-4xl font-semibold text-kitch-charcoal">{title}</h1>
 
       <div className="mt-6 flex items-end justify-between">
         <p className="text-sm text-kitch-grey">
