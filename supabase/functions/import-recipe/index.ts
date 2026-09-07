@@ -3,6 +3,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 
 import { makeOpenAIRequest } from "./openai-helper.ts"
 import { parse as parseHTML } from "npm:node-html-parser"
+import { decodeBase64 } from "jsr:@std/encoding/base64"
 import { createClient } from "https://esm.sh/@supabase/supabase-js"
 
 /* ------------------------------------------------------------------ */
@@ -51,14 +52,15 @@ Deno.serve(async (req: Request) => {
     }
 
     // Build recipe (OpenAI)
-    const {recipe, openAIRequest, openAIResponse} = await buildRecipe(scrapedData, source, urlText, images, user)
+    const {recipe, openAIRequest, openAIResponse, sourceImagePaths} = await buildRecipe(scrapedData, source, urlText, images, user)
 
     // Write recipe to database
     await writeRecipeToDatabase(
       supabase,
       recipe,
       openAIRequest,
-      openAIResponse
+      openAIResponse,
+      sourceImagePaths
     )
 
     return new Response(
@@ -220,6 +222,10 @@ async function buildRecipe(scrapedData: any, source: RecipeSource, urlText: stri
   } else if (source === "image") {
     const {formattedData, requestBody, response} = await makeOpenAIRequest("recipeFromImage", "", images)
 
+    // Retain the uploaded originals so this extraction can be re-checked or
+    // re-parsed later. Deliberately not used as the thumbnail.
+    const sourceImagePaths = await uploadSourceImages(images)
+
     const recipe = {
       user_id: user.id,
       name: formattedData.recipe_name ?? "New Recipe",
@@ -238,6 +244,7 @@ async function buildRecipe(scrapedData: any, source: RecipeSource, urlText: stri
       recipe,
       openAIRequest: requestBody,
       openAIResponse: response,
+      sourceImagePaths,
     }
   } else {
     const rawText =
@@ -274,7 +281,7 @@ async function buildRecipe(scrapedData: any, source: RecipeSource, urlText: stri
   }
 }
 
-async function writeRecipeToDatabase(supabase: ReturnType<typeof createClient>, recipe: any, requestBody: string | null, response: string | null) {
+async function writeRecipeToDatabase(supabase: ReturnType<typeof createClient>, recipe: any, requestBody: string | null, response: string | null, sourceImagePaths: string[] = []) {
   // Write recipe (RPC)
   const recipePayload = {
     _id: recipe.id ?? "0",
@@ -345,6 +352,55 @@ async function writeRecipeToDatabase(supabase: ReturnType<typeof createClient>, 
 
     recipe.directions = directionsPayload
   }
+
+  // Link retained source images to the recipe. Best-effort: a failure here
+  // costs provenance, not the import, so it must not discard a parsed recipe.
+  if (sourceImagePaths?.length) {
+    const { error } = await supabase
+      .from("recipe_source_images")
+      .insert(
+        sourceImagePaths.map((storage_path: string) => ({
+          recipe_id: recipeID,
+          storage_path,
+        }))
+      )
+
+    if (error) {
+      console.error(`Failed to link source images: ${error.message}`)
+    }
+  }
+}
+
+// Persists the base64 images sent with an image import, returning their storage
+// paths. Best-effort per image: the recipe itself parsed fine, so a storage
+// failure (e.g. a page over the bucket's 5MB limit) must not fail the import.
+async function uploadSourceImages(images: string[]): Promise<string[]> {
+  if (!images?.length) return []
+
+  const supabase = getSupabaseAdmin()
+  const paths: string[] = []
+
+  for (const image of images) {
+    try {
+      const bytes = decodeBase64(image)
+      const filePath = `source/${crypto.randomUUID()}.jpeg`
+
+      const { error } = await supabase.storage
+        .from("recipes")
+        .upload(filePath, bytes, { contentType: "image/jpeg" })
+
+      if (error) {
+        console.error(`Failed to upload source image: ${error.message}`)
+        continue
+      }
+
+      paths.push(filePath)
+    } catch (err) {
+      console.error(`Failed to encode source image: ${err.message}`)
+    }
+  }
+
+  return paths
 }
 
 async function uploadImage(scrapedData: any, source: RecipeSource) {
