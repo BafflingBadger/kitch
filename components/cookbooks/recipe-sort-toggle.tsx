@@ -117,7 +117,12 @@ export function RecipeSortToggle({
       </div>
 
       <div className="mt-8">
-        <RecipeGrid recipes={sortedRecipes} backHref={backHref} backLabel={title} />
+        <RecipeGrid
+          recipes={sortedRecipes}
+          backHref={backHref}
+          backLabel={title}
+          cookbookId={cookbookId}
+        />
       </div>
     </div>
   );

@@ -13,10 +13,12 @@ export function RecipeGrid({
   recipes,
   backHref,
   backLabel,
+  cookbookId = null,
 }: {
   recipes: RecipeGridItem[];
   backHref?: string;
   backLabel?: string;
+  cookbookId?: number | null;
 }) {
   if (recipes.length === 0) {
     return (
@@ -36,6 +38,7 @@ export function RecipeGrid({
           rating={recipe.rating}
           backHref={backHref}
           backLabel={backLabel}
+          cookbookId={cookbookId}
         />
       ))}
     </div>

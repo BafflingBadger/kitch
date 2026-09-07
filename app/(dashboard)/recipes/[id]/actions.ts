@@ -288,3 +288,79 @@ export async function saveRecipeCookbooks(recipeId: number, cookbookIds: number[
 
   return { ok: true as const };
 }
+
+export async function deleteRecipe(recipeId: number) {
+  if (!Number.isInteger(recipeId) || recipeId <= 0) {
+    return { ok: false as const, error: "Invalid recipe id" };
+  }
+
+  const supabase = await createClient();
+  const { data: claimsData, error: authError } = await supabase.auth.getClaims();
+  if (authError || !claimsData?.claims) {
+    return { ok: false as const, error: "Not authenticated" };
+  }
+  const userId = claimsData.claims.sub;
+
+  const { data: recipe } = await supabase
+    .from("recipes")
+    .select("id")
+    .eq("id", recipeId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!recipe) {
+    return { ok: false as const, error: "Recipe not found" };
+  }
+
+  const { error } = await supabase.from("recipes").delete().eq("id", recipeId);
+  if (error) {
+    return { ok: false as const, error: error.message };
+  }
+
+  revalidatePath("/cookbooks");
+  revalidatePath("/cookbooks/[id]", "page");
+
+  return { ok: true as const };
+}
+
+export async function removeRecipeFromCookbook(recipeId: number, cookbookId: number) {
+  if (
+    !Number.isInteger(recipeId) ||
+    recipeId <= 0 ||
+    !Number.isInteger(cookbookId) ||
+    cookbookId <= 0
+  ) {
+    return { ok: false as const, error: "Invalid id" };
+  }
+
+  const supabase = await createClient();
+  const { data: claimsData, error: authError } = await supabase.auth.getClaims();
+  if (authError || !claimsData?.claims) {
+    return { ok: false as const, error: "Not authenticated" };
+  }
+  const userId = claimsData.claims.sub;
+
+  const { data: cookbook } = await supabase
+    .from("cookbooks")
+    .select("id")
+    .eq("id", cookbookId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!cookbook) {
+    return { ok: false as const, error: "Cookbook not found" };
+  }
+
+  const { error: mappingError } = await supabase
+    .from("recipes_mapping")
+    .delete()
+    .eq("recipe_id", recipeId)
+    .eq("cookbook_id", cookbookId);
+  if (mappingError) {
+    return { ok: false as const, error: mappingError.message };
+  }
+
+  revalidatePath(`/recipes/${recipeId}`);
+  revalidatePath("/cookbooks");
+  revalidatePath("/cookbooks/[id]", "page");
+
+  return { ok: true as const };
+}

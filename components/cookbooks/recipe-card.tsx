@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Facebook, FileText, Instagram, PlayCircle, Star, type LucideIcon } from "lucide-react";
 
 import { CoverImage } from "@/components/cookbooks/cover-image";
+import { RecipeCardMenu } from "@/components/cookbooks/recipe-card-menu";
 import { cn } from "@/lib/utils";
 
 const SOURCE_META: Record<
@@ -46,6 +47,7 @@ export interface RecipeCardProps {
   rating: number;
   backHref?: string;
   backLabel?: string;
+  cookbookId?: number | null;
 }
 
 export function RecipeCard({
@@ -56,20 +58,30 @@ export function RecipeCard({
   rating,
   backHref,
   backLabel,
+  cookbookId = null,
 }: RecipeCardProps) {
   const { label, icon: Icon, className } = sourceMeta(source);
 
   const query = new URLSearchParams();
   if (backHref) query.set("backHref", backHref);
   if (backLabel) query.set("backLabel", backLabel);
-  const href = query.size > 0 ? `/recipes/${id}?${query.toString()}` : `/recipes/${id}`;
+  const queryString = query.size > 0 ? `?${query.toString()}` : "";
+  const href = `/recipes/${id}${queryString}`;
+  const editHref = `/recipes/${id}/edit${queryString}`;
 
   return (
     <Link
       href={href}
       prefetch={false}
-      className="group flex h-[366px] flex-col overflow-hidden rounded-2xl border border-kitch-charcoal/10 bg-white shadow-sm transition-shadow hover:shadow-md"
+      className="group relative flex h-[366px] flex-col overflow-hidden rounded-2xl border border-kitch-charcoal/10 bg-white shadow-sm transition-shadow hover:shadow-md"
     >
+      <RecipeCardMenu
+        recipeId={id}
+        recipeTitle={title}
+        editHref={editHref}
+        cookbookId={cookbookId}
+        cookbookTitle={backLabel ?? ""}
+      />
       <div className="h-[190px] shrink-0 overflow-hidden">
         <CoverImage imageUrl={imageUrl} alt={title} />
       </div>

@@ -60,6 +60,7 @@ async function RecipeDetailContent({
     <div>
       <RecipeHeader
         recipeId={recipe.id}
+        recipeName={recipe.name}
         backHref={backHref ?? "/cookbooks"}
         backLabel={backLabel ?? "Cookbooks"}
       />
