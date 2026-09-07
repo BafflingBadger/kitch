@@ -1,5 +1,7 @@
 import { Bell, Plus, Search } from "lucide-react";
 
+import { NewRecipeDialog } from "@/components/recipes/new-recipe-dialog";
+
 export function CookbookTopbar() {
   return (
     <div className="flex items-center justify-between gap-4">
@@ -20,13 +22,17 @@ export function CookbookTopbar() {
           <Bell className="h-5 w-5" />
           <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-kitch-red" />
         </button>
-        <button
-          type="button"
-          className="flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-kitch-orange-from to-kitch-orange-to px-4 py-2.5 text-sm font-semibold text-white shadow-sm"
-        >
-          <Plus className="h-4 w-4" />
-          New Recipe
-        </button>
+        <NewRecipeDialog
+          trigger={
+            <button
+              type="button"
+              className="flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-kitch-orange-from to-kitch-orange-to px-4 py-2.5 text-sm font-semibold text-white shadow-sm"
+            >
+              <Plus className="h-4 w-4" />
+              New Recipe
+            </button>
+          }
+        />
       </div>
     </div>
   );
