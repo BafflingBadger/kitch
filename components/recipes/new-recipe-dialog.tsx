@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, type ReactNode } from "react";
+import { useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, FileText, Link2, Upload } from "lucide-react";
 
@@ -13,13 +13,24 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { createBlankRecipe } from "@/app/(dashboard)/recipes/actions";
+import {
+  createBlankRecipe,
+  importRecipeFromImages,
+  importRecipeFromUrl,
+} from "@/app/(dashboard)/recipes/actions";
+import { filesToBase64Images, ImportFileError } from "@/lib/recipes/import-file-encoding";
 
 export function NewRecipeDialog({ trigger }: { trigger: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [linkUrl, setLinkUrl] = useState("");
   const [isCreating, startCreating] = useTransition();
+  const [isImportingLink, startImportingLink] = useTransition();
+  const [isImportingPhoto, startImportingPhoto] = useTransition();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  const isBusy = isCreating || isImportingLink || isImportingPhoto;
 
   function handleWriteFromScratch() {
     setError(null);
@@ -30,6 +41,45 @@ export function NewRecipeDialog({ trigger }: { trigger: ReactNode }) {
         router.push(`/recipes/${result.recipeId}/edit`);
       } else {
         setError(result.error);
+      }
+    });
+  }
+
+  function handleImportFromLink() {
+    if (!linkUrl.trim()) return;
+    setError(null);
+    startImportingLink(async () => {
+      const result = await importRecipeFromUrl(linkUrl);
+      if (result.ok) {
+        setOpen(false);
+        router.push(`/recipes/${result.recipeId}/edit`);
+      } else {
+        setError(result.error);
+      }
+    });
+  }
+
+  function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (!files.length) return;
+    setError(null);
+    startImportingPhoto(async () => {
+      try {
+        const images = await filesToBase64Images(files);
+        const result = await importRecipeFromImages(images);
+        if (result.ok) {
+          setOpen(false);
+          router.push(`/recipes/${result.recipeId}/edit`);
+        } else {
+          setError(result.error);
+        }
+      } catch (err) {
+        setError(
+          err instanceof ImportFileError
+            ? err.message
+            : "Failed to process the selected file(s)",
+        );
       }
     });
   }
@@ -54,15 +104,23 @@ export function NewRecipeDialog({ trigger }: { trigger: ReactNode }) {
               <Link2 className="h-4 w-4 shrink-0 text-kitch-grey" />
               <input
                 type="text"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleImportFromLink();
+                }}
+                disabled={isBusy}
                 placeholder="Paste recipe link here"
-                className="w-full bg-transparent text-sm text-kitch-charcoal placeholder:text-kitch-grey focus:outline-none"
+                className="w-full bg-transparent text-sm text-kitch-charcoal placeholder:text-kitch-grey focus:outline-none disabled:opacity-60"
               />
             </div>
             <button
               type="button"
-              className="flex h-11 shrink-0 items-center rounded-full bg-gradient-to-r from-kitch-orange-from to-kitch-orange-to px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90"
+              onClick={handleImportFromLink}
+              disabled={isBusy || !linkUrl.trim()}
+              className="flex h-11 shrink-0 items-center rounded-full bg-gradient-to-r from-kitch-orange-from to-kitch-orange-to px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-60"
             >
-              Import
+              {isImportingLink ? "Importing…" : "Import"}
             </button>
           </div>
         </div>
@@ -73,25 +131,35 @@ export function NewRecipeDialog({ trigger }: { trigger: ReactNode }) {
           <div className="h-px flex-1 bg-kitch-charcoal/10" />
         </div>
 
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,application/pdf"
+          multiple
+          className="hidden"
+          onChange={handleFileSelected}
+        />
         <button
           type="button"
-          className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-kitch-charcoal/20 bg-kitch-peach/40 px-6 py-8 text-center transition-colors hover:bg-kitch-peach/60"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isBusy}
+          className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-kitch-charcoal/20 bg-kitch-peach/40 px-6 py-8 text-center transition-colors hover:bg-kitch-peach/60 disabled:opacity-60"
         >
           <span className="flex h-11 w-11 items-center justify-center rounded-full bg-kitch-peach text-kitch-red">
             <Upload className="h-5 w-5" />
           </span>
           <span className="text-sm font-semibold text-kitch-charcoal">
-            Upload a photo or PDF
+            {isImportingPhoto ? "Importing…" : "Upload a photo or PDF"}
           </span>
           <span className="text-xs text-kitch-grey">
-            Drag and drop, or click to browse. JPG, PNG, or PDF up to 10MB.
+            Click to browse. JPG, PNG, or PDF up to 10MB.
           </span>
         </button>
 
         <button
           type="button"
           onClick={handleWriteFromScratch}
-          disabled={isCreating}
+          disabled={isBusy}
           className={cn(
             "flex items-center gap-3 rounded-2xl border border-kitch-charcoal/10 bg-kitch-cream-dark px-4 py-3.5 text-left transition-colors hover:bg-kitch-cream-dark/70 disabled:opacity-60",
           )}
