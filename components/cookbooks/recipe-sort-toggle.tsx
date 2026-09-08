@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, Search, Trash2 } from "lucide-react";
 
 import { RecipeGrid, type RecipeGridItem } from "@/components/cookbooks/recipe-grid";
 import { EditCookbookDialog } from "@/components/cookbooks/edit-cookbook-dialog";
@@ -30,25 +30,43 @@ export function RecipeSortToggle({
   recipes,
   backHref,
   cookbookId,
+  initialQuery,
 }: {
   title: string;
   recipes: RecipeGridItem[];
   backHref: string;
   cookbookId: number | null;
+  initialQuery?: string;
 }) {
   const [sort, setSort] = useState<SortMode>("recent");
+  const [query, setQuery] = useState(initialQuery ?? "");
+
+  // Next.js reuses this component across navigations that only change the `q`
+  // param (e.g. searching again from the nav bar while already on this page),
+  // so the initial-value useState above won't pick up later prop changes on
+  // its own — re-sync whenever a fresh initialQuery arrives.
+  useEffect(() => {
+    setQuery(initialQuery ?? "");
+  }, [initialQuery]);
+
+  const filteredRecipes = useMemo(() => {
+    const trimmed = query.trim().toLowerCase();
+    return trimmed
+      ? recipes.filter((recipe) => recipe.title.toLowerCase().includes(trimmed))
+      : recipes;
+  }, [recipes, query]);
 
   const sortedRecipes = useMemo(() => {
-    const copy = [...recipes];
+    const copy = [...filteredRecipes];
     if (sort === "rating") {
       copy.sort((a, b) => b.rating - a.rating || b.createdAt - a.createdAt);
     } else {
       copy.sort((a, b) => b.createdAt - a.createdAt);
     }
     return copy;
-  }, [recipes, sort]);
+  }, [filteredRecipes, sort]);
 
-  const recipeCountLabel = `${recipes.length} Recipe${recipes.length === 1 ? "" : "s"}`;
+  const recipeCountLabel = `${filteredRecipes.length} Recipe${filteredRecipes.length === 1 ? "" : "s"}`;
 
   return (
     <div>
@@ -93,26 +111,38 @@ export function RecipeSortToggle({
 
       <h1 className="mt-4 font-literata text-4xl font-semibold text-kitch-charcoal">{title}</h1>
 
-      <div className="mt-6 flex items-end justify-between">
+      <div className="mt-6 flex items-center justify-between gap-4">
         <p className="text-sm text-kitch-grey">
-          {recipeCountLabel} • {relativeUpdateLabel(recipes)}
+          {recipeCountLabel} • {relativeUpdateLabel(filteredRecipes)}
         </p>
-        <div className="inline-flex items-center rounded-full border border-kitch-charcoal/10 bg-kitch-cream-dark p-1">
-          {SORT_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => setSort(option.value)}
-              className={cn(
-                "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-                sort === option.value
-                  ? "bg-gradient-to-r from-kitch-orange-from to-kitch-orange-to text-white shadow-sm"
-                  : "text-kitch-charcoal/70",
-              )}
-            >
-              {option.label}
-            </button>
-          ))}
+        <div className="flex shrink-0 items-center gap-3">
+          <div className="flex w-56 items-center gap-2 rounded-full border border-kitch-charcoal/10 bg-kitch-cream-dark px-3.5 py-2 focus-within:border-kitch-red/40">
+            <Search className="h-4 w-4 shrink-0 text-kitch-grey" />
+            <input
+              type="text"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search recipes..."
+              className="w-full bg-transparent text-sm text-kitch-charcoal placeholder:text-kitch-grey focus:outline-none"
+            />
+          </div>
+          <div className="inline-flex items-center rounded-full border border-kitch-charcoal/10 bg-kitch-cream-dark p-1">
+            {SORT_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setSort(option.value)}
+                className={cn(
+                  "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+                  sort === option.value
+                    ? "bg-gradient-to-r from-kitch-orange-from to-kitch-orange-to text-white shadow-sm"
+                    : "text-kitch-charcoal/70",
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -122,6 +152,7 @@ export function RecipeSortToggle({
           backHref={backHref}
           backLabel={title}
           cookbookId={cookbookId}
+          emptyMessage={query.trim() ? `No recipes match "${query.trim()}"` : undefined}
         />
       </div>
     </div>

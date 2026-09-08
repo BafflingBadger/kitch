@@ -1,18 +1,12 @@
-import { Bell, Plus, Search } from "lucide-react";
+import { Bell, Plus } from "lucide-react";
 
 import { NewRecipeDialog } from "@/components/recipes/new-recipe-dialog";
+import { RecipeSearch } from "@/components/cookbooks/recipe-search";
 
 export function CookbookTopbar() {
   return (
     <div className="flex items-center justify-between gap-4">
-      <div className="flex w-full max-w-md items-center gap-2 rounded-full border border-kitch-charcoal/10 bg-kitch-cream-dark px-4 py-2.5">
-        <Search className="h-4 w-4 shrink-0 text-kitch-grey" />
-        <input
-          type="text"
-          placeholder="Search recipes, ingredients..."
-          className="w-full bg-transparent text-sm text-kitch-charcoal placeholder:text-kitch-grey focus:outline-none"
-        />
-      </div>
+      <RecipeSearch />
       <div className="flex shrink-0 items-center gap-4">
         <button
           type="button"

@@ -2,6 +2,11 @@
 
 import { createClient } from "@/lib/supabase/server";
 
+function recipeThumbnailUrl(path: string | null | undefined) {
+  if (!path) return null;
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/recipes/${path}`;
+}
+
 export async function createBlankRecipe() {
   const supabase = await createClient();
   const { data: claimsData, error: authError } = await supabase.auth.getClaims();
@@ -73,4 +78,41 @@ export async function importRecipeFromUrl(urlText: string) {
     return { ok: false as const, error: "That doesn't look like a valid URL" };
   }
   return invokeImportRecipe({ urlText: trimmed });
+}
+
+export interface RecipeSearchResult {
+  id: number;
+  name: string;
+  imageUrl: string | null;
+  source: string | null;
+  rating: number;
+}
+
+export async function listRecipesForSearch() {
+  const supabase = await createClient();
+  const { data: claimsData, error: authError } = await supabase.auth.getClaims();
+  if (authError || !claimsData?.claims) {
+    return { ok: false as const, error: "Not authenticated" };
+  }
+  const userId = claimsData.claims.sub;
+
+  const { data, error } = await supabase
+    .from("recipes")
+    .select("id, name, thumbnail, source_text, rating")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return { ok: false as const, error: error.message };
+  }
+
+  const recipes: RecipeSearchResult[] = (data ?? []).map((recipe) => ({
+    id: recipe.id,
+    name: recipe.name,
+    imageUrl: recipeThumbnailUrl(recipe.thumbnail),
+    source: recipe.source_text,
+    rating: recipe.rating ?? 0,
+  }));
+
+  return { ok: true as const, recipes };
 }

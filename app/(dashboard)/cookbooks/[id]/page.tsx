@@ -21,10 +21,13 @@ type RecipeRow = {
 
 async function CookbookDetailContent({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ q?: string }>;
 }) {
   const { id: cookbookId } = await params;
+  const { q } = await searchParams;
 
   const supabase = await createClient();
   const { data: claimsData } = await supabase.auth.getClaims();
@@ -82,18 +85,21 @@ async function CookbookDetailContent({
       recipes={recipes}
       backHref={`/cookbooks/${cookbookId}`}
       cookbookId={numericCookbookId}
+      initialQuery={q}
     />
   );
 }
 
 export default function CookbookDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ q?: string }>;
 }) {
   return (
     <Suspense fallback={<div className="text-sm text-kitch-grey">Loading…</div>}>
-      <CookbookDetailContent params={params} />
+      <CookbookDetailContent params={params} searchParams={searchParams} />
     </Suspense>
   );
 }

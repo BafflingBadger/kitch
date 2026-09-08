@@ -14,16 +14,16 @@ export function RecipeGrid({
   backHref,
   backLabel,
   cookbookId = null,
+  emptyMessage = "No recipes in this cookbook yet.",
 }: {
   recipes: RecipeGridItem[];
   backHref?: string;
   backLabel?: string;
   cookbookId?: number | null;
+  emptyMessage?: string;
 }) {
   if (recipes.length === 0) {
-    return (
-      <p className="text-sm text-kitch-grey">No recipes in this cookbook yet.</p>
-    );
+    return <p className="text-sm text-kitch-grey">{emptyMessage}</p>;
   }
 
   return (
