@@ -303,12 +303,36 @@ export async function deleteRecipe(recipeId: number) {
 
   const { data: recipe } = await supabase
     .from("recipes")
-    .select("id")
+    .select("id, thumbnail")
     .eq("id", recipeId)
     .eq("user_id", userId)
     .maybeSingle();
   if (!recipe) {
     return { ok: false as const, error: "Recipe not found" };
+  }
+
+  const { data: sourceImages } = await supabase
+    .from("recipe_source_images")
+    .select("storage_path")
+    .eq("recipe_id", recipeId);
+
+  // Imports that found no image store "" rather than null, so filter on falsy.
+  const storagePaths = [
+    ...(recipe.thumbnail ? [recipe.thumbnail] : []),
+    ...(sourceImages ?? []).map((row) => row.storage_path),
+  ];
+
+  // Remove files before the row: the storage delete policy proves ownership by
+  // joining back to `recipes`, so it stops authorizing these objects the moment
+  // the recipe is gone. Failing this way leaves a recipe with a missing image,
+  // which a retry fixes; the reverse leaves files no one can ever delete.
+  if (storagePaths.length) {
+    const { error: storageError } = await supabase.storage
+      .from("recipes")
+      .remove(storagePaths);
+    if (storageError) {
+      return { ok: false as const, error: storageError.message };
+    }
   }
 
   const { error } = await supabase.from("recipes").delete().eq("id", recipeId);

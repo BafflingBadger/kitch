@@ -281,6 +281,34 @@ async function buildRecipe(scrapedData: any, source: RecipeSource, urlText: stri
   }
 }
 
+// `recipes.request` is a debug log of the OpenAI call, but an image import sends
+// whole base64 JPEGs, so logging the request verbatim persisted megabytes of
+// image data per row (21MB across four rows before this existed) in a column
+// nothing reads back. Replace the image payloads in the LOGGED copy only -- what
+// is sent to OpenAI is built separately and is untouched.
+//
+// Rebuilds the wrapper objects by spreading rather than deep-cloning, so the
+// base64 strings are dropped by reference instead of being copied first.
+function stripImagesFromRequestLog(requestBody: any) {
+  if (!requestBody || !Array.isArray(requestBody.messages)) return requestBody
+
+  return {
+    ...requestBody,
+    messages: requestBody.messages.map((message: any) =>
+      Array.isArray(message.content)
+        ? {
+            ...message,
+            content: message.content.map((part: any) =>
+              part?.type === "image_url"
+                ? { ...part, image_url: { ...part.image_url, url: "[image omitted]" } }
+                : part
+            ),
+          }
+        : message
+    ),
+  }
+}
+
 async function writeRecipeToDatabase(supabase: ReturnType<typeof createClient>, recipe: any, requestBody: string | null, response: string | null, sourceImagePaths: string[] = []) {
   // Write recipe (RPC)
   const recipePayload = {
@@ -289,7 +317,7 @@ async function writeRecipeToDatabase(supabase: ReturnType<typeof createClient>, 
     _name: recipe.name,
     _thumbnail: recipe.thumbnail ?? null,
     _source_url: recipe.source_url,
-    _request: requestBody ?? null,
+    _request: stripImagesFromRequestLog(requestBody) ?? null,
     _response: response ?? null,
     _cookbook_ids: "",
     _rating: 0,
