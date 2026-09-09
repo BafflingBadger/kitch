@@ -75,12 +75,14 @@ async function CookbooksContent() {
   ]);
 
   const latestThumbnailByCookbook = new Map<number, string | null>();
+  const latestUpdateByCookbook = new Map<number, string>();
   for (const mapping of latestMappings ?? []) {
     if (!latestThumbnailByCookbook.has(mapping.cookbook_id)) {
       latestThumbnailByCookbook.set(
         mapping.cookbook_id,
         mapping.recipes?.thumbnail ?? null,
       );
+      latestUpdateByCookbook.set(mapping.cookbook_id, mapping.created_at);
     }
   }
 
@@ -95,6 +97,7 @@ async function CookbooksContent() {
     id: row.id,
     title: row.title,
     count: row.recipes_mapping?.[0]?.count ?? 0,
+    updatedLabel: relativeUpdateLabel(latestUpdateByCookbook.get(row.id) ?? null),
     imageUrl: recipeThumbnailUrl(
       chosenThumbnailByCookbook.get(row.id) ?? latestThumbnailByCookbook.get(row.id),
     ),

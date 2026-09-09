@@ -7,6 +7,7 @@ export interface CookbookGridItem {
   id: number;
   title: string;
   count: number;
+  updatedLabel: string;
   imageUrl: string | null;
 }
 
@@ -39,6 +40,7 @@ export function CookbookGrid({
           id={cookbook.id}
           title={cookbook.title}
           count={cookbook.count}
+          updatedLabel={cookbook.updatedLabel}
           imageUrl={cookbook.imageUrl}
           href={`/cookbooks/${cookbook.id}`}
         />

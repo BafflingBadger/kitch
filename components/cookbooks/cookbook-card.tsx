@@ -16,8 +16,8 @@ type CookbookCardProps =
       variant: "standard";
       id: number;
       title: string;
-      subtitle?: string;
       count: number;
+      updatedLabel: string;
       imageUrl?: string | null;
       href?: string;
     };
@@ -53,19 +53,17 @@ export function CookbookCard(props: CookbookCardProps) {
         <CoverImage imageUrl={props.imageUrl} alt={props.title} />
       </div>
       <div className="flex flex-1 flex-col justify-between p-5">
-        <div>
-          <h3 className="line-clamp-3 font-literata text-xl font-semibold text-kitch-charcoal">
-            {props.title}
-          </h3>
-          {props.subtitle ? (
-            <p className="mt-1 text-sm text-kitch-grey">{props.subtitle}</p>
-          ) : null}
-        </div>
-        <div className="mt-4 flex items-center justify-between">
-          <span className="rounded-full bg-kitch-peach px-3 py-1 text-xs font-medium text-kitch-peach-foreground">
-            {props.count} Recipes
-          </span>
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-kitch-peach text-kitch-red transition-transform group-hover:translate-x-0.5">
+        <h3 className="line-clamp-2 font-literata text-xl font-semibold text-kitch-charcoal">
+          {props.title}
+        </h3>
+        <div className="flex items-center justify-between border-t border-kitch-charcoal/10 pt-4">
+          <div>
+            <p className="text-base font-semibold text-kitch-charcoal">
+              {props.count} Recipes
+            </p>
+            <p className="text-sm text-kitch-grey">{props.updatedLabel}</p>
+          </div>
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-kitch-peach text-kitch-red transition-transform group-hover:translate-x-0.5">
             <ArrowRight className="h-4 w-4" />
           </span>
         </div>
