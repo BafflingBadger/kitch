@@ -2,7 +2,6 @@ import { Suspense } from "react";
 
 import { createClient } from "@/lib/supabase/server";
 import { CookbookGrid } from "@/components/cookbooks/cookbook-grid";
-import { CookbookToggle } from "@/components/cookbooks/cookbook-toggle";
 
 function timeOfDayGreeting() {
   const hour = new Date().getHours();
@@ -110,12 +109,17 @@ async function CookbooksContent() {
   };
 
   return (
-    <CookbookToggle
-      greeting={`${timeOfDayGreeting()}, ${firstName}`}
-      subtext="Ready to create something delicious tonight?"
-    >
-      <CookbookGrid allRecipes={allRecipes} cookbooks={cookbooks} />
-    </CookbookToggle>
+    <div>
+      <h1 className="font-literata text-3xl font-semibold text-kitch-charcoal">
+        {`${timeOfDayGreeting()}, ${firstName}`}
+      </h1>
+      <p className="mt-2 text-sm text-kitch-grey">
+        Ready to create something delicious tonight?
+      </p>
+      <div className="mt-8">
+        <CookbookGrid allRecipes={allRecipes} cookbooks={cookbooks} />
+      </div>
+    </div>
   );
 }
 

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   BookOpen,
   Calendar,
+  Compass,
   LogOut,
   MoreVertical,
   Settings,
@@ -22,9 +23,10 @@ import { LogoutButton } from "@/components/logout-button";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/cookbooks", label: "Cookbooks", icon: BookOpen, activePrefixes: ["/recipes"] },
+  { href: "/cookbooks", label: "Recipes", icon: BookOpen, activePrefixes: ["/recipes"] },
   { href: "/meal-prep", label: "Meal Plan", icon: Calendar },
   { href: "/grocery-list", label: "Grocery List", icon: ShoppingCart },
+  { href: "/discover", label: "Discover", icon: Compass },
 ];
 
 export function CookbookSidebar({
@@ -54,15 +56,15 @@ export function CookbookSidebar({
             alt="Kitch"
             width={42}
             height={34}
-            className="object-contain"
+            className="h-[44px] w-auto object-contain"
           />
-          <span className="font-literata text-3xl font-bold text-[#B23E34]">
-            Kitch
-          </span>
+          <div>
+            <span className="font-literata text-3xl font-bold leading-tight text-[#B23E34]">
+              Kitch
+            </span>
+            <p className="-mt-1 text-xs text-kitch-grey">Cooking made easy</p>
+          </div>
         </div>
-        <p style={{ marginLeft: "3.1rem" }} className="-mt-1 text-xs text-kitch-grey">
-          Cooking made easy
-        </p>
 
         <nav className="mt-8 flex flex-col gap-1">
           {navItems.map((item) => {
@@ -78,13 +80,22 @@ export function CookbookSidebar({
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-semibold transition-colors",
                   isActive
-                    ? "bg-gradient-to-r from-kitch-orange-from to-kitch-orange-to text-white shadow-sm"
-                    : "text-kitch-charcoal/80 hover:bg-kitch-cream",
+                    ? "bg-white text-kitch-charcoal shadow-[0_2px_6px_rgba(0,0,0,0.1)]"
+                    : "text-kitch-grey hover:bg-white/60",
                 )}
               >
-                <Icon className="h-4 w-4" />
+                <span
+                  className={cn(
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
+                    isActive
+                      ? "bg-gradient-to-br from-kitch-orange-from to-kitch-orange-to text-white"
+                      : "bg-kitch-charcoal/5 text-kitch-grey",
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                </span>
                 {item.label}
               </Link>
             );
