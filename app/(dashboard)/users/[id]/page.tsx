@@ -1,16 +1,10 @@
 import { Suspense } from "react";
+import { notFound } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 import { CookbookGrid } from "@/components/cookbooks/cookbook-grid";
-import { CookbookToggle } from "@/components/cookbooks/cookbook-toggle";
-import { FollowingCookbooksContent } from "@/components/cookbooks/following-cookbooks-content";
-
-function timeOfDayGreeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Good Morning";
-  if (hour < 18) return "Good Afternoon";
-  return "Good Evening";
-}
+import { FollowUserButton } from "@/components/cookbooks/follow-user-button";
+import { Avatar } from "@/components/ui/avatar";
 
 function relativeUpdateLabel(dateString: string | null) {
   if (!dateString) return "No recipes yet";
@@ -27,53 +21,62 @@ function recipeThumbnailUrl(path: string | null | undefined) {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/recipes/${path}`;
 }
 
-async function CookbooksContent() {
+async function ProfileContent({ params }: { params: Promise<{ id: string }> }) {
+  const { id: profileUserId } = await params;
+
   const supabase = await createClient();
   const { data: claimsData } = await supabase.auth.getClaims();
-  const userId = claimsData!.claims.sub;
-  const email = claimsData!.claims.email as string | undefined;
+  const viewerId = claimsData?.claims.sub;
+  const isOwnProfile = viewerId === profileUserId;
 
   const { data: profile } = await supabase
     .from("users")
-    .select("display_name")
-    .eq("id", userId)
+    .select("display_name, profile_pic_url")
+    .eq("id", profileUserId)
     .maybeSingle();
 
-  const firstName = (
-    profile?.display_name ??
-    email?.split("@")[0] ??
-    "there"
-  ).split(" ")[0];
+  if (!profile) notFound();
 
   const [
     { data: cookbookRows },
     { data: latestMappings },
     { data: chosenThumbnails },
     { data: recentRecipes, count: recipeCount },
+    { data: followRow },
   ] = await Promise.all([
     supabase
       .from("cookbooks")
       .select("id, title, recipes_mapping(count)")
-      .eq("user_id", userId)
+      .eq("user_id", profileUserId)
       .order("sort_order"),
     supabase
       .from("recipes_mapping")
       .select("cookbook_id, created_at, recipes(thumbnail), cookbooks!inner(user_id)")
-      .eq("cookbooks.user_id", userId)
+      .eq("cookbooks.user_id", profileUserId)
       .order("created_at", { ascending: false }),
     supabase
       .from("cookbook_thumbnail_mapping")
       .select("cookbook_id, recipes(thumbnail), cookbooks!inner(user_id)")
       // "order" is quoted because it collides with PostgREST's reserved ?order= sort param.
       .eq('"order"' as "order", 0)
-      .eq("cookbooks.user_id", userId),
+      .eq("cookbooks.user_id", profileUserId),
     supabase
       .from("recipes")
       .select("id, created_at", { count: "exact" })
-      .eq("user_id", userId)
+      .eq("user_id", profileUserId)
       .order("created_at", { ascending: false })
       .limit(1),
+    isOwnProfile || !viewerId
+      ? Promise.resolve({ data: null })
+      : supabase
+          .from("followers")
+          .select("id")
+          .eq("user_id", viewerId)
+          .eq("follows_user_id", profileUserId)
+          .eq("follow_type", "user")
+          .maybeSingle(),
   ]);
+  const isFollowing = !!followRow;
 
   const latestThumbnailByCookbook = new Map<number, string | null>();
   const latestUpdateByCookbook = new Map<number, string>();
@@ -111,20 +114,43 @@ async function CookbooksContent() {
   };
 
   return (
-    <CookbookToggle
-      greeting={`${timeOfDayGreeting()}, ${firstName}`}
-      subtext="Ready to cook something delicious?"
-      followingContent={<FollowingCookbooksContent />}
-    >
-      <CookbookGrid allRecipes={allRecipes} cookbooks={cookbooks} />
-    </CookbookToggle>
+    <div>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Avatar
+            displayName={profile.display_name}
+            avatarUrl={profile.profile_pic_url}
+            sizeClassName="h-16 w-16"
+          />
+          <h1 className="font-literata text-3xl font-semibold text-kitch-charcoal">
+            {profile.display_name}
+          </h1>
+        </div>
+        {isOwnProfile ? null : (
+          <FollowUserButton userId={profileUserId} initialIsFollowing={isFollowing} />
+        )}
+      </div>
+
+      <div className="mt-8">
+        <CookbookGrid
+          allRecipes={allRecipes}
+          cookbooks={cookbooks}
+          ownerId={profileUserId}
+          ownerName={profile.display_name}
+        />
+      </div>
+    </div>
   );
 }
 
-export default function CookbooksPage() {
+export default function ProfilePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   return (
     <Suspense fallback={<div className="text-sm text-kitch-grey">Loading…</div>}>
-      <CookbooksContent />
+      <ProfileContent params={params} />
     </Suspense>
   );
 }

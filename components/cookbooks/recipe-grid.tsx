@@ -14,12 +14,14 @@ export function RecipeGrid({
   backHref,
   backLabel,
   cookbookId = null,
+  ownerId = null,
   emptyMessage = "No recipes in this cookbook yet.",
 }: {
   recipes: RecipeGridItem[];
   backHref?: string;
   backLabel?: string;
   cookbookId?: number | null;
+  ownerId?: string | null;
   emptyMessage?: string;
 }) {
   if (recipes.length === 0) {
@@ -39,6 +41,7 @@ export function RecipeGrid({
           backHref={backHref}
           backLabel={backLabel}
           cookbookId={cookbookId}
+          ownerId={ownerId}
         />
       ))}
     </div>

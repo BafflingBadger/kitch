@@ -7,6 +7,8 @@ import { ArrowLeft, Pencil, Search, Trash2 } from "lucide-react";
 import { RecipeGrid, type RecipeGridItem } from "@/components/cookbooks/recipe-grid";
 import { EditCookbookDialog } from "@/components/cookbooks/edit-cookbook-dialog";
 import { DeleteCookbookDialog } from "@/components/cookbooks/delete-cookbook-dialog";
+import { FollowCookbookButton } from "@/components/cookbooks/follow-cookbook-button";
+import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
 const SORT_OPTIONS = [
@@ -31,12 +33,26 @@ export function RecipeSortToggle({
   backHref,
   cookbookId,
   initialQuery,
+  readOnly = false,
+  ownerId = null,
+  ownerName = null,
+  ownerAvatarUrl = null,
+  isFollowing = false,
+  topBackHref = "/cookbooks",
+  topBackLabel = "Cookbooks",
 }: {
   title: string;
   recipes: RecipeGridItem[];
   backHref: string;
   cookbookId: number | null;
   initialQuery?: string;
+  readOnly?: boolean;
+  ownerId?: string | null;
+  ownerName?: string | null;
+  ownerAvatarUrl?: string | null;
+  isFollowing?: boolean;
+  topBackHref?: string;
+  topBackLabel?: string;
 }) {
   const [sort, setSort] = useState<SortMode>("recent");
   const [query, setQuery] = useState(initialQuery ?? "");
@@ -72,13 +88,13 @@ export function RecipeSortToggle({
     <div>
       <div className="flex items-center justify-between gap-4">
         <Link
-          href="/cookbooks"
+          href={topBackHref}
           className="inline-flex items-center gap-1.5 text-sm font-medium text-kitch-grey transition-colors hover:text-kitch-charcoal"
         >
           <ArrowLeft className="h-4 w-4" />
-          Cookbooks
+          {topBackLabel}
         </Link>
-        {cookbookId !== null ? (
+        {cookbookId !== null && !readOnly ? (
           <div className="flex shrink-0 items-center gap-2">
             <EditCookbookDialog
               cookbookId={cookbookId}
@@ -106,10 +122,26 @@ export function RecipeSortToggle({
               }
             />
           </div>
+        ) : readOnly && ownerId ? (
+          <FollowCookbookButton
+            ownerId={ownerId}
+            cookbookId={cookbookId}
+            initialIsFollowing={isFollowing}
+          />
         ) : null}
       </div>
 
       <h1 className="mt-4 font-literata text-4xl font-semibold text-kitch-charcoal">{title}</h1>
+
+      {readOnly && ownerName && ownerId ? (
+        <Link
+          href={`/users/${ownerId}`}
+          className="mt-2 inline-flex items-center gap-2 hover:opacity-80"
+        >
+          <Avatar displayName={ownerName} avatarUrl={ownerAvatarUrl} sizeClassName="h-6 w-6" />
+          <p className="text-sm text-kitch-grey">By {ownerName}</p>
+        </Link>
+      ) : null}
 
       <div className="mt-6 flex items-center justify-between gap-4">
         <p className="text-sm text-kitch-grey">
@@ -152,6 +184,7 @@ export function RecipeSortToggle({
           backHref={backHref}
           backLabel={title}
           cookbookId={cookbookId}
+          ownerId={ownerId}
           emptyMessage={query.trim() ? `No recipes match "${query.trim()}"` : undefined}
         />
       </div>

@@ -20,10 +20,10 @@ async function RecipeDetailContent({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ backHref?: string; backLabel?: string }>;
+  searchParams: Promise<{ backHref?: string; backLabel?: string; owner?: string }>;
 }) {
   const { id } = await params;
-  const { backHref, backLabel } = await searchParams;
+  const { backHref, backLabel, owner } = await searchParams;
 
   const supabase = await createClient();
   const { data: claimsData } = await supabase.auth.getClaims();
@@ -32,14 +32,29 @@ async function RecipeDetailContent({
   const numericId = Number(id);
   if (!Number.isInteger(numericId)) notFound();
 
+  const contentUserId = owner && owner !== userId ? owner : userId;
+  const isOwner = contentUserId === userId;
+
   const { data: recipe } = await supabase
     .from("recipes")
     .select("id, name, thumbnail, notes, rating, source_text, created_at")
     .eq("id", numericId)
-    .eq("user_id", userId)
+    .eq("user_id", contentUserId)
     .maybeSingle();
 
   if (!recipe) notFound();
+
+  let ownerName: string | null = null;
+  let ownerAvatarUrl: string | null = null;
+  if (!isOwner) {
+    const { data: ownerProfile } = await supabase
+      .from("users")
+      .select("display_name, profile_pic_url")
+      .eq("id", contentUserId)
+      .maybeSingle();
+    ownerName = ownerProfile?.display_name ?? null;
+    ownerAvatarUrl = ownerProfile?.profile_pic_url ?? null;
+  }
 
   const [{ data: ingredientRows }, { data: directionRows }] = await Promise.all([
     supabase
@@ -63,6 +78,9 @@ async function RecipeDetailContent({
         recipeName={recipe.name}
         backHref={backHref ?? "/cookbooks"}
         backLabel={backLabel ?? "Cookbooks"}
+        isOwner={isOwner}
+        ownerName={ownerName}
+        ownerAvatarUrl={ownerAvatarUrl}
       />
 
       <div className="mx-auto mt-6 grid max-w-6xl grid-cols-1 gap-6 lg:grid-cols-12 lg:items-center lg:gap-10">
@@ -78,7 +96,11 @@ async function RecipeDetailContent({
             {recipe.name}
           </h1>
           <div className="mt-3">
-            <StarRating recipeId={recipe.id} initialRating={recipe.rating ?? 0} />
+            <StarRating
+              recipeId={recipe.id}
+              initialRating={recipe.rating ?? 0}
+              readOnly={!isOwner}
+            />
           </div>
           <div className="mt-5">
             <RecipeActionButtons

@@ -1,12 +1,12 @@
 import { Plus } from "lucide-react";
 
 import { NewRecipeDialog } from "@/components/recipes/new-recipe-dialog";
-import { RecipeSearch } from "@/components/cookbooks/recipe-search";
+import { DashboardSearch } from "@/components/cookbooks/dashboard-search";
 
 export function CookbookTopbar() {
   return (
     <div className="flex items-center justify-between gap-4">
-      <RecipeSearch />
+      <DashboardSearch />
       <div className="flex shrink-0 items-center gap-4">
         <NewRecipeDialog
           trigger={

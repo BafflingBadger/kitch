@@ -48,6 +48,7 @@ export interface RecipeCardProps {
   backHref?: string;
   backLabel?: string;
   cookbookId?: number | null;
+  ownerId?: string | null;
 }
 
 export function RecipeCard({
@@ -59,12 +60,14 @@ export function RecipeCard({
   backHref,
   backLabel,
   cookbookId = null,
+  ownerId = null,
 }: RecipeCardProps) {
   const { label, icon: Icon, className } = sourceMeta(source);
 
   const query = new URLSearchParams();
   if (backHref) query.set("backHref", backHref);
   if (backLabel) query.set("backLabel", backLabel);
+  if (ownerId) query.set("owner", ownerId);
   const queryString = query.size > 0 ? `?${query.toString()}` : "";
   const href = `/recipes/${id}${queryString}`;
   const editHref = `/recipes/${id}/edit${queryString}`;
@@ -75,13 +78,15 @@ export function RecipeCard({
       prefetch={false}
       className="group relative flex h-[366px] flex-col overflow-hidden rounded-2xl border border-kitch-charcoal/10 bg-white shadow-sm transition-shadow hover:shadow-md"
     >
-      <RecipeCardMenu
-        recipeId={id}
-        recipeTitle={title}
-        editHref={editHref}
-        cookbookId={cookbookId}
-        cookbookTitle={backLabel ?? ""}
-      />
+      {!ownerId ? (
+        <RecipeCardMenu
+          recipeId={id}
+          recipeTitle={title}
+          editHref={editHref}
+          cookbookId={cookbookId}
+          cookbookTitle={backLabel ?? ""}
+        />
+      ) : null}
       <div className="h-[190px] shrink-0 overflow-hidden">
         <CoverImage imageUrl={imageUrl} alt={title} />
       </div>

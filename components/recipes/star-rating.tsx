@@ -9,9 +9,11 @@ import { cn } from "@/lib/utils";
 export function StarRating({
   recipeId,
   initialRating,
+  readOnly = false,
 }: {
   recipeId: number;
   initialRating: number;
+  readOnly?: boolean;
 }) {
   const [rating, setRating] = useState(initialRating);
   const [isPending, startTransition] = useTransition();
@@ -27,6 +29,23 @@ export function StarRating({
       }
     });
   };
+
+  if (readOnly) {
+    return (
+      <div role="img" aria-label={`Rated ${rating} out of 5 stars`} className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((value) => (
+          <span key={value} className="p-0.5">
+            <Star
+              className={cn(
+                "h-6 w-6",
+                value <= rating ? "fill-red-500 text-red-500" : "text-kitch-charcoal/20",
+              )}
+            />
+          </span>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div

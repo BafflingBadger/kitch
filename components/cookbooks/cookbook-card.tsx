@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 
 import { CoverImage } from "@/components/cookbooks/cover-image";
 import { CookbookCardMenu } from "@/components/cookbooks/cookbook-card-menu";
+import { CookbookOwnerBadge } from "@/components/cookbooks/cookbook-owner-badge";
 
 type CookbookCardProps =
   | {
@@ -20,6 +21,18 @@ type CookbookCardProps =
       updatedLabel: string;
       imageUrl?: string | null;
       href?: string;
+      readOnly?: boolean;
+    }
+  | {
+      variant: "following";
+      title: string;
+      count: number;
+      updatedLabel: string;
+      imageUrl?: string | null;
+      href: string;
+      ownerId: string;
+      ownerName: string;
+      ownerAvatarUrl?: string | null;
     };
 
 export function CookbookCard(props: CookbookCardProps) {
@@ -48,9 +61,18 @@ export function CookbookCard(props: CookbookCardProps) {
       prefetch={false}
       className="group relative flex h-[366px] flex-col overflow-hidden rounded-2xl border border-kitch-charcoal/10 bg-white shadow-sm transition-shadow hover:shadow-md"
     >
-      <CookbookCardMenu cookbookId={props.id} cookbookTitle={props.title} />
-      <div className="h-[190px] shrink-0 overflow-hidden">
+      {props.variant === "standard" && !props.readOnly ? (
+        <CookbookCardMenu cookbookId={props.id} cookbookTitle={props.title} />
+      ) : null}
+      <div className="relative h-[190px] shrink-0 overflow-hidden">
         <CoverImage imageUrl={props.imageUrl} alt={props.title} />
+        {props.variant === "following" ? (
+          <CookbookOwnerBadge
+            ownerId={props.ownerId}
+            ownerName={props.ownerName}
+            ownerAvatarUrl={props.ownerAvatarUrl}
+          />
+        ) : null}
       </div>
       <div className="flex flex-1 flex-col justify-between p-5">
         <h3 className="line-clamp-2 font-literata text-xl font-semibold text-kitch-charcoal">

@@ -8,10 +8,12 @@ export function CookbookToggle({
   greeting,
   subtext,
   children,
+  followingContent,
 }: {
   greeting: string;
   subtext: string;
   children: ReactNode;
+  followingContent: ReactNode;
 }) {
   const [tab, setTab] = useState<"personal" | "following">("personal");
 
@@ -43,15 +45,7 @@ export function CookbookToggle({
         </div>
       </div>
 
-      <div className="mt-8">
-        {tab === "personal" ? (
-          children
-        ) : (
-          <p className="text-sm text-kitch-grey">
-            Cookbooks from people you follow will show up here soon.
-          </p>
-        )}
-      </div>
+      <div className="mt-8">{tab === "personal" ? children : followingContent}</div>
     </div>
   );
 }

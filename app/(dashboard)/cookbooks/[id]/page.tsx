@@ -24,14 +24,17 @@ async function CookbookDetailContent({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; owner?: string; backHref?: string; backLabel?: string }>;
 }) {
   const { id: cookbookId } = await params;
-  const { q } = await searchParams;
+  const { q, owner, backHref: topBackHref, backLabel: topBackLabel } = await searchParams;
 
   const supabase = await createClient();
   const { data: claimsData } = await supabase.auth.getClaims();
   const userId = claimsData!.claims.sub;
+
+  const contentUserId = owner && owner !== userId ? owner : userId;
+  const readOnly = contentUserId !== userId;
 
   let title = "All Recipes";
   let recipeRows: RecipeRow[] = [];
@@ -41,7 +44,7 @@ async function CookbookDetailContent({
     const { data } = await supabase
       .from("recipes")
       .select("id, name, thumbnail, source_text, rating, created_at")
-      .eq("user_id", userId)
+      .eq("user_id", contentUserId)
       .order("created_at", { ascending: false });
     recipeRows = data ?? [];
   } else {
@@ -53,7 +56,7 @@ async function CookbookDetailContent({
       .from("cookbooks")
       .select("title")
       .eq("id", numericId)
-      .eq("user_id", userId)
+      .eq("user_id", contentUserId)
       .maybeSingle();
 
     if (!cookbook) notFound();
@@ -70,6 +73,32 @@ async function CookbookDetailContent({
       .filter((recipe): recipe is RecipeRow => recipe !== null);
   }
 
+  let ownerName: string | null = null;
+  let ownerAvatarUrl: string | null = null;
+  let isFollowing = false;
+  if (readOnly) {
+    const followQuery = supabase
+      .from("followers")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("follows_user_id", contentUserId)
+      .eq("follow_type", "cookbook");
+
+    const [{ data: ownerProfile }, { data: followRow }] = await Promise.all([
+      supabase
+        .from("users")
+        .select("display_name, profile_pic_url")
+        .eq("id", contentUserId)
+        .maybeSingle(),
+      numericCookbookId === null
+        ? followQuery.is("follows_cookbook_id", null).maybeSingle()
+        : followQuery.eq("follows_cookbook_id", numericCookbookId).maybeSingle(),
+    ]);
+    ownerName = ownerProfile?.display_name ?? null;
+    ownerAvatarUrl = ownerProfile?.profile_pic_url ?? null;
+    isFollowing = !!followRow;
+  }
+
   const recipes: RecipeGridItem[] = recipeRows.map((recipe) => ({
     id: recipe.id,
     title: recipe.name,
@@ -79,13 +108,27 @@ async function CookbookDetailContent({
     createdAt: new Date(recipe.created_at).getTime(),
   }));
 
+  const backParams = new URLSearchParams();
+  if (readOnly) backParams.set("owner", contentUserId);
+  if (topBackHref) backParams.set("backHref", topBackHref);
+  if (topBackLabel) backParams.set("backLabel", topBackLabel);
+  const backParamsString = backParams.toString();
+  const backHref = `/cookbooks/${cookbookId}${backParamsString ? `?${backParamsString}` : ""}`;
+
   return (
     <RecipeSortToggle
       title={title}
       recipes={recipes}
-      backHref={`/cookbooks/${cookbookId}`}
+      backHref={backHref}
       cookbookId={numericCookbookId}
       initialQuery={q}
+      readOnly={readOnly}
+      ownerId={readOnly ? contentUserId : null}
+      ownerName={ownerName}
+      ownerAvatarUrl={ownerAvatarUrl}
+      isFollowing={isFollowing}
+      topBackHref={topBackHref}
+      topBackLabel={topBackLabel}
     />
   );
 }
@@ -95,7 +138,7 @@ export default function CookbookDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; owner?: string; backHref?: string; backLabel?: string }>;
 }) {
   return (
     <Suspense fallback={<div className="text-sm text-kitch-grey">Loading…</div>}>

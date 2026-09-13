@@ -19,11 +19,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Avatar } from "@/components/ui/avatar";
 import { LogoutButton } from "@/components/logout-button";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/cookbooks", label: "Recipes", icon: BookOpen, activePrefixes: ["/recipes"] },
+  {
+    href: "/cookbooks",
+    label: "Recipes",
+    icon: BookOpen,
+    activePrefixes: ["/recipes", "/users"],
+  },
   { href: "/meal-prep", label: "Meal Plan", icon: Calendar },
   { href: "/grocery-list", label: "Grocery List", icon: ShoppingCart },
   { href: "/discover", label: "Discover", icon: Compass },
@@ -39,18 +45,23 @@ export function CookbookSidebar({
   avatarUrl?: string | null;
 }) {
   const pathname = usePathname();
-  const initials =
-    displayName
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase() || "?";
 
   return (
     <aside className="flex h-screen w-72 shrink-0 flex-col justify-between border-r border-kitch-charcoal/10 bg-kitch-cream-dark p-6">
       <div>
-        <div className="flex items-center gap-2">
+        <Link
+          href="/cookbooks"
+          onClick={(event) => {
+            // Personal/Following is local component state, not part of the URL. Next's
+            // client-side router cache can keep a previously-visited /cookbooks page
+            // instance alive (still on Following) even when navigating in from another
+            // route, so a normal Link transition doesn't reliably land on Personal —
+            // force a full reload so the page always remounts fresh there.
+            event.preventDefault();
+            window.location.href = "/cookbooks";
+          }}
+          className="flex items-center gap-2"
+        >
           <Image
             src="/logo.png"
             alt="Kitch"
@@ -64,7 +75,7 @@ export function CookbookSidebar({
             </span>
             <p className="-mt-1 text-xs text-kitch-grey">Cooking made easy</p>
           </div>
-        </div>
+        </Link>
 
         <nav className="mt-8 flex flex-col gap-1">
           {navItems.map((item) => {
@@ -104,18 +115,7 @@ export function CookbookSidebar({
       </div>
 
       <div className="flex items-center gap-3 border-t border-kitch-charcoal/10 pt-4">
-        {avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={avatarUrl}
-            alt={displayName}
-            className="h-9 w-9 shrink-0 rounded-full object-cover"
-          />
-        ) : (
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-kitch-peach text-sm font-semibold text-kitch-peach-foreground">
-            {initials}
-          </span>
-        )}
+        <Avatar displayName={displayName} avatarUrl={avatarUrl} sizeClassName="h-9 w-9" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-kitch-charcoal">
             {displayName}
