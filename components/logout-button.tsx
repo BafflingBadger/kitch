@@ -17,6 +17,8 @@ export function LogoutButton({
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/auth/login");
+    // Server components still hold the signed-in session until revalidated.
+    router.refresh();
   };
 
   return (

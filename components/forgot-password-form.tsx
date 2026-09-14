@@ -1,24 +1,20 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useState } from "react";
 
-export function ForgotPasswordForm({
-  className,
-  ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+import { AuthCard, AuthError, AuthLabel } from "@/components/auth/auth-card";
+import {
+  authInputClassName,
+  authLinkClassName,
+  authPrimaryButtonClassName,
+} from "@/components/auth/styles";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { createClient } from "@/lib/supabase/client";
+import { validateEmail } from "@/lib/auth/validation";
+
+export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -26,12 +22,19 @@ export function ForgotPasswordForm({
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = createClient();
-    setIsLoading(true);
     setError(null);
 
+    const emailError = validateEmail(email);
+    if (emailError) {
+      setError(emailError);
+      return;
+    }
+
+    const supabase = createClient();
+    setIsLoading(true);
+
     try {
-      // The url which will be included in the email. This URL needs to be configured in your redirect URLs in the Supabase dashboard at https://supabase.com/dashboard/project/_/auth/url-configuration
+      // This URL must be listed under Redirect URLs in the Supabase dashboard.
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/update-password`,
       });
@@ -44,62 +47,66 @@ export function ForgotPasswordForm({
     }
   };
 
+  if (success) {
+    return (
+      <AuthCard
+        title="Check Your Email"
+        description="Password reset instructions sent."
+      >
+        <p className="text-center text-sm text-kitch-grey">
+          If you registered using your email and password, you will receive a
+          password reset email shortly.
+        </p>
+        <p className="mt-7 text-center text-sm text-kitch-charcoal">
+          <Link href="/auth/login" className={authLinkClassName}>
+            Back to log in.
+          </Link>
+        </p>
+      </AuthCard>
+    );
+  }
+
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      {success ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Check Your Email</CardTitle>
-            <CardDescription>Password reset instructions sent</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              If you registered using your email and password, you will receive
-              a password reset email.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Reset Your Password</CardTitle>
-            <CardDescription>
-              Type in your email and we&apos;ll send you a link to reset your
-              password
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleForgotPassword}>
-              <div className="flex flex-col gap-6">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="m@example.com"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-                {error && <p className="text-sm text-red-500">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Sending..." : "Send reset email"}
-                </Button>
-              </div>
-              <div className="mt-4 text-center text-sm">
-                Already have an account?{" "}
-                <Link
-                  href="/auth/login"
-                  className="underline underline-offset-4"
-                >
-                  Login
-                </Link>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+    <AuthCard
+      title="Reset Password"
+      description="Enter your email and we'll send you a link to reset it."
+    >
+      <form
+        onSubmit={handleForgotPassword}
+        noValidate
+        className="flex flex-col gap-6"
+      >
+        <div className="flex flex-col gap-2">
+          <AuthLabel htmlFor="email">Email</AuthLabel>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            placeholder="you@example.com"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={authInputClassName}
+          />
+        </div>
+
+        {error ? <AuthError message={error} /> : null}
+
+        <Button
+          type="submit"
+          disabled={isLoading}
+          className={authPrimaryButtonClassName}
+        >
+          {isLoading ? "Sending..." : "Send reset email"}
+        </Button>
+      </form>
+
+      <p className="mt-7 text-center text-sm text-kitch-charcoal">
+        Remembered it?{" "}
+        <Link href="/auth/login" className={authLinkClassName}>
+          Log in.
+        </Link>
+      </p>
+    </AuthCard>
   );
 }

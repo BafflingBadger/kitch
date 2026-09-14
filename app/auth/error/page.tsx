@@ -1,51 +1,44 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
 import { Suspense } from "react";
 
-async function ErrorContent({
+import { AuthCard } from "@/components/auth/auth-card";
+import { authLinkClassName } from "@/components/auth/styles";
+
+async function ErrorDetail({
   searchParams,
 }: {
-  searchParams: Promise<{ error: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const params = await searchParams;
 
   return (
-    <>
-      {params?.error ? (
-        <p className="text-sm text-muted-foreground">
-          Code error: {params.error}
-        </p>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          An unspecified error occurred.
-        </p>
-      )}
-    </>
+    <p className="text-center text-sm text-kitch-grey">
+      {params?.error ?? "An unspecified error occurred."}
+    </p>
   );
 }
 
 export default function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ error: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-sm">
-        <div className="flex flex-col gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">
-                Sorry, something went wrong.
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Suspense>
-                <ErrorContent searchParams={searchParams} />
-              </Suspense>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
+    <AuthCard title="Something Went Wrong">
+      <Suspense
+        fallback={
+          <p className="text-center text-sm text-kitch-grey">
+            An unspecified error occurred.
+          </p>
+        }
+      >
+        <ErrorDetail searchParams={searchParams} />
+      </Suspense>
+      <p className="mt-7 text-center text-sm text-kitch-charcoal">
+        <Link href="/auth/login" className={authLinkClassName}>
+          Back to log in.
+        </Link>
+      </p>
+    </AuthCard>
   );
 }

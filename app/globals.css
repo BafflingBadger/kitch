@@ -76,3 +76,23 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  /*
+   * Chrome repaints autofilled inputs with its own background and text colour
+   * via the UA stylesheet, which `background-color` cannot override. A large
+   * inset box-shadow is the only thing that covers it.
+   *
+   * Scoped to a class rather than applied to every `input` -- the rest of the
+   * app puts inputs on white and cream-dark, so a single global colour would be
+   * wrong for them.
+   */
+  .autofill-cream:-webkit-autofill,
+  .autofill-cream:-webkit-autofill:hover,
+  .autofill-cream:-webkit-autofill:focus,
+  .autofill-cream:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px hsl(var(--kitch-cream)) inset;
+    -webkit-text-fill-color: hsl(var(--kitch-charcoal));
+    caret-color: hsl(var(--kitch-charcoal));
+  }
+}
