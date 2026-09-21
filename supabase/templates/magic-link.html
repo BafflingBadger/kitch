@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Kitch Sign-In Code</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f9f9f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f9f9f9; padding: 40px 10px;">
+    <tr>
+      <td align="center">
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 500px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+          <!-- Body Content -->
+          <tr>
+            <td style="padding: 40px 32px; color: #333333;">
+              <h2 style="margin-top: 0; margin-bottom: 24px; font-size: 22px; font-weight: 700; color: #111111;">Your sign-in code</h2>
+
+              <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.5; color: #4a4a4a;">
+                Hi there,
+              </p>
+
+              <p style="margin: 0 0 32px 0; font-size: 16px; line-height: 1.5; color: #4a4a4a;">
+                Enter this code in Kitch to confirm it's you:
+              </p>
+
+              <!-- Sign-in Code -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 32px;">
+                <tr>
+                  <td align="center" style="padding: 20px 16px; background-color: #f9f9f9; border-radius: 8px;">
+                    <div style="font-family: 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Courier New', monospace; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #111111; line-height: 1.2;">
+                      {{ .Token }}
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.5; color: #7a7a7a; border-top: 1px solid #eeeeee; padding-top: 24px;">
+                This code can only be used once and will expire shortly. If you didn't ask for it, you can safely ignore this email&mdash;don't share this code with anyone.
+              </p>
+
+              <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #4a4a4a; font-weight: 500;">
+                Happy cooking,<br>
+                <span style="color: #111111; font-weight: 600;">The Kitch Team</span>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

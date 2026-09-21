@@ -118,7 +118,15 @@ export type Database = {
           title?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cookbooks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       directions: {
         Row: {
@@ -442,7 +450,15 @@ export type Database = {
           thumbnail?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "recipes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       recipes_mapping: {
         Row: {
@@ -602,6 +618,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assert_recent_auth: { Args: never; Returns: undefined }
       Cookbooks_Following_ReadAll: {
         Args: { p_user_id: string }
         Returns: {
@@ -624,6 +641,8 @@ export type Database = {
         Args: { p_payload: Json }
         Returns: undefined
       }
+      current_user_has_password: { Args: never; Returns: boolean }
+      delete_own_account: { Args: never; Returns: undefined }
       FamilyPlan_JoinFamily_Accept: {
         Args: { p_owner_id: string; p_user_id: string }
         Returns: undefined

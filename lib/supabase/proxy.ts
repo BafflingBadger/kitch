@@ -52,7 +52,11 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname !== "/" &&
     !user &&
     !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth")
+    !request.nextUrl.pathname.startsWith("/auth") &&
+    // Privacy policy and terms have to be readable without an account -- app
+    // stores require a public URL, and gating them behind a login defeats the
+    // point of publishing them.
+    !request.nextUrl.pathname.startsWith("/legal")
   ) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
