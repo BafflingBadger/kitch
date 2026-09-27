@@ -412,3 +412,9 @@ enabled = true
 # declarative_schema_path = "./database"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+# Stripe authenticates this endpoint with its own signature header, not a
+# Supabase JWT, so the platform must not reject the request before it arrives.
+# The signature is verified inside the function.
+[functions.stripe-webhook]
+verify_jwt = false

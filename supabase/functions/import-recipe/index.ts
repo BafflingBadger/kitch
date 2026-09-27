@@ -42,6 +42,11 @@ Deno.serve(async (req: Request) => {
     const validationError = validateRequest(urlText, images)
     if (validationError) return validationError
 
+    // Enforce the free plan's import cap BEFORE the BrightData scrape and the
+    // OpenAI call, so a blocked import costs nothing.
+    const quotaResponse = await enforceImportQuota(supabase)
+    if (quotaResponse) return quotaResponse
+
     const source = getRecipeSource(urlText)
 
     // Get scraped data (BrightData)
@@ -62,6 +67,10 @@ Deno.serve(async (req: Request) => {
       openAIResponse,
       sourceImagePaths
     )
+
+    // Only now, with the recipe actually written, does the import count. An
+    // import that failed anywhere above must never cost someone a slot.
+    await recordImport(supabase)
 
     return new Response(
       JSON.stringify(recipe),
@@ -641,4 +650,75 @@ async function validateUser(req: Request) {
   }
 
   return {supabase, user}
+}
+
+/* ------------------------------------------------------------------ */
+/* Free-plan import quota                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Whether to actually block over-quota imports, as opposed to only counting
+ * them.
+ *
+ * This function is the import path for the *shipped iOS app* as well as the
+ * web, so flipping enforcement on changes behaviour for users who never
+ * touched the web app. Deploy with this unset, confirm counts look right in
+ * `public.import_usage`, then set it to "true" deliberately.
+ */
+const ENFORCE_IMPORT_LIMIT = Deno.env.get("ENFORCE_IMPORT_LIMIT") === "true"
+
+/**
+ * Returns a 402 response when the caller is out of free imports, or null to
+ * let the import proceed.
+ *
+ * Fails open on any error reading the quota: this is the paid product's gate,
+ * not a security boundary, and a transient database hiccup should not stop
+ * someone importing a recipe they are entitled to.
+ */
+async function enforceImportQuota(
+  supabase: ReturnType<typeof createClient>
+): Promise<Response | null> {
+  const { data, error } = await supabase.rpc("imports_get_usage")
+
+  if (error) {
+    console.error(`Could not read import usage, allowing import: ${error.message}`)
+    return null
+  }
+
+  const usage = Array.isArray(data) ? data[0] : data
+  if (!usage || usage.is_premium) return null
+
+  const used = usage.used ?? 0
+  const limit = usage.import_limit ?? 0
+  if (used < limit) return null
+
+  if (!ENFORCE_IMPORT_LIMIT) {
+    console.log(`Over quota (${used}/${limit}) but enforcement is off; allowing.`)
+    return null
+  }
+
+  return new Response(
+    JSON.stringify({
+      error: `You've used all ${limit} free imports. Subscribe to Kitch Premium for unlimited imports.`,
+      code: "import_limit_reached",
+      used,
+      limit,
+    }),
+    {
+      // 402 Payment Required: the request was understood and the caller is
+      // authenticated -- they just need to pay.
+      status: 402,
+      headers: { "Content-Type": "application/json" },
+    }
+  )
+}
+
+/** Spend one import. Never fails the request -- the recipe is already saved. */
+async function recordImport(
+  supabase: ReturnType<typeof createClient>
+): Promise<void> {
+  const { error } = await supabase.rpc("imports_record")
+  if (error) {
+    console.error(`Failed to record import against quota: ${error.message}`)
+  }
 }

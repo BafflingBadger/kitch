@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, FileText, ShieldCheck, User } from "lucide-react";
+import { AlertTriangle, FileText, ShieldCheck, Sparkles, User } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const SECTIONS = [
   { id: "profile", label: "Profile", icon: User, danger: false },
+  { id: "premium", label: "Kitch Premium", icon: Sparkles, danger: false },
   { id: "account", label: "Account & Security", icon: ShieldCheck, danger: false },
   { id: "legal", label: "Legal & Support", icon: FileText, danger: false },
   { id: "danger", label: "Danger Zone", icon: AlertTriangle, danger: true },

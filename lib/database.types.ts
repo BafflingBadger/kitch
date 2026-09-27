@@ -305,6 +305,24 @@ export type Database = {
         }
         Relationships: []
       }
+      import_usage: {
+        Row: {
+          import_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          import_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          import_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ingredients: {
         Row: {
           created_at: string
@@ -559,6 +577,48 @@ export type Database = {
           },
         ]
       }
+      subscriptions_stripe: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          plan: string
+          price_id: string
+          status: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          trial_end: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          plan: string
+          price_id: string
+          status: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          trial_end?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          plan?: string
+          price_id?: string
+          status?: string
+          stripe_customer_id?: string
+          stripe_subscription_id?: string
+          trial_end?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           created_at: string
@@ -643,6 +703,22 @@ export type Database = {
       }
       current_user_has_password: { Args: never; Returns: boolean }
       delete_own_account: { Args: never; Returns: undefined }
+      entitlement_get_status: {
+        Args: never
+        Returns: {
+          cancel_at_period_end: boolean
+          family_owner_name: string
+          family_seats_used: number
+          has_stripe_billing: boolean
+          is_family_owner: boolean
+          is_premium: boolean
+          plan: string
+          renews_at: string
+          source: string
+          status: string
+          trial_end: string
+        }[]
+      }
       FamilyPlan_JoinFamily_Accept: {
         Args: { p_owner_id: string; p_user_id: string }
         Returns: undefined
@@ -655,6 +731,7 @@ export type Database = {
         }[]
       }
       FamilyPlan_ReadAllMembers: { Args: { p_user_id: string }; Returns: Json }
+      has_active_premium: { Args: never; Returns: boolean }
       Households_JoinHousehold_GetSetupData: {
         Args: { p_owner_id: string; p_user_id: string }
         Returns: {
@@ -667,6 +744,15 @@ export type Database = {
         Args: { p_owner_id: string; p_user_id: string }
         Returns: undefined
       }
+      imports_get_usage: {
+        Args: never
+        Returns: {
+          import_limit: number
+          is_premium: boolean
+          used: number
+        }[]
+      }
+      imports_record: { Args: never; Returns: number }
       MealPlanRecipes_ReadAll: {
         Args: { p_end_date: string; p_start_date: string; p_user_id: string }
         Returns: {

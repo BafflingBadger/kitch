@@ -2,13 +2,24 @@ import { Plus } from "lucide-react";
 
 import { NewRecipeDialog } from "@/components/recipes/new-recipe-dialog";
 import { DashboardSearch } from "@/components/cookbooks/dashboard-search";
+import { getImportUsage } from "@/lib/subscription/entitlement";
 
-export function CookbookTopbar() {
+export async function CookbookTopbar() {
+  // Read here rather than inside the dialog so the meter is correct the moment
+  // it opens, with no loading flash.
+  const usage = await getImportUsage();
+
   return (
     <div className="flex items-center justify-between gap-4">
       <DashboardSearch />
       <div className="flex shrink-0 items-center gap-4">
         <NewRecipeDialog
+          quota={{
+            isPremium: usage.isPremium,
+            used: usage.used,
+            limit: usage.limit,
+            exhausted: usage.exhausted,
+          }}
           trigger={
             <button
               type="button"

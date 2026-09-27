@@ -1,6 +1,14 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getImportUsage } from "@/lib/subscription/entitlement";
+
+/**
+ * Why a caller was turned away, when the reason is something the UI should act
+ * on rather than just print. `quota_exceeded` swaps the import fields for an
+ * upgrade prompt instead of showing a red error string.
+ */
+export type ImportFailureReason = "quota_exceeded";
 
 function recipeThumbnailUrl(path: string | null | undefined) {
   if (!path) return null;
@@ -35,21 +43,39 @@ async function invokeImportRecipe(body: { urlText?: string; images?: string[] })
     return { ok: false as const, error: "Not authenticated" };
   }
 
+  // Pre-flight the free-plan cap. This is a courtesy, not the gate -- the real
+  // one is inside the edge function, which is also what protects the iOS app
+  // and anyone calling the endpoint directly. Checking here just saves a ~30s
+  // scrape-and-OpenAI round-trip before telling someone they need to upgrade.
+  const usage = await getImportUsage();
+  if (usage.exhausted) {
+    return {
+      ok: false as const,
+      error: `You've used all ${usage.limit} free imports.`,
+      reason: "quota_exceeded" as const,
+    };
+  }
+
   const { data, error } = await supabase.functions.invoke("import-recipe", { body });
 
   if (error) {
     let message = "Failed to import recipe";
+    let reason: ImportFailureReason | undefined;
     if (error.context && typeof error.context.json === "function") {
       try {
         const errorBody = await error.context.json();
         if (errorBody?.error) message = errorBody.error;
+        // The edge function answers 402 with this code when the cap is hit.
+        // Reachable despite the pre-flight above: the counter can be spent by
+        // another device between the two calls.
+        if (errorBody?.code === "import_limit_reached") reason = "quota_exceeded";
       } catch {
         // response body wasn't JSON; fall back to the generic message
       }
     } else if (error.message) {
       message = error.message;
     }
-    return { ok: false as const, error: message };
+    return { ok: false as const, error: message, reason };
   }
 
   const recipeId = data?.id;
