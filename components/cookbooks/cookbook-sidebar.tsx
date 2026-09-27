@@ -70,21 +70,22 @@ export function CookbookSidebar({
             event.preventDefault();
             window.location.href = "/cookbooks";
           }}
-          className="flex items-center gap-2"
+          // Gap is ~1/3 of the 30px wordmark.
+          className="flex items-center gap-2.5"
         >
+          {/* Sized off the wordmark: `text-3xl` is 30px, so the hat is 36px
+              tall (1.2x). Its 1847x1474 source makes that 45px wide -- height
+              is what's fixed, width follows. */}
           <Image
             src="/logo.png"
             alt="Kitch"
-            width={42}
-            height={34}
-            className="h-[44px] w-auto object-contain"
+            width={45}
+            height={36}
+            className="h-9 w-auto object-contain"
           />
-          <div>
-            <span className="font-literata text-3xl font-bold leading-tight text-[#B23E34]">
-              Kitch
-            </span>
-            <p className="-mt-1 text-xs text-kitch-grey">Cooking made easy</p>
-          </div>
+          <span className="font-literata text-3xl font-semibold leading-tight text-kitch-charcoal">
+            Kitch
+          </span>
         </Link>
 
         <nav className="mt-8 flex flex-col gap-1">
