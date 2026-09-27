@@ -66,6 +66,30 @@ function toIso(seconds: number | null | undefined): string | null {
   return typeof seconds === "number" ? new Date(seconds * 1000).toISOString() : null;
 }
 
+/**
+ * Whether a cancellation is scheduled.
+ *
+ * `cancel_at_period_end` alone is NOT sufficient. Cancelling a trialing
+ * subscription through the billing portal leaves that boolean `false` and
+ * records the intent in `cancel_at` / `canceled_at` instead (verified against
+ * a live test subscription: cancel_at_period_end false, cancel_at set, reason
+ * "cancellation_requested"). Trusting the boolean tells someone who just
+ * cancelled that their plan "renews" on the very date it actually ends.
+ */
+function isCancelling(subscription: Stripe.Subscription): boolean {
+  return subscription.cancel_at_period_end === true || subscription.cancel_at != null;
+}
+
+/**
+ * When access actually ends for a cancelling subscription.
+ *
+ * `cancel_at` need not equal the period end -- a cancellation can be scheduled
+ * for an arbitrary date -- so prefer it when present.
+ */
+function accessEndsAt(subscription: Stripe.Subscription): string | null {
+  return toIso(subscription.cancel_at) ?? currentPeriodEnd(subscription);
+}
+
 /** Resolve the Kitch user this subscription belongs to. */
 async function resolveUserId(subscription: Stripe.Subscription): Promise<string | null> {
   const fromMetadata = subscription.metadata?.user_id;
@@ -124,8 +148,12 @@ async function upsertSubscription(subscription: Stripe.Subscription): Promise<vo
       price_id: priceId,
       plan,
       status: subscription.status,
-      current_period_end: currentPeriodEnd(subscription),
-      cancel_at_period_end: subscription.cancel_at_period_end ?? false,
+      // For a cancelling subscription this is the date access ends, which is
+      // what the UI labels it.
+      current_period_end: isCancelling(subscription)
+        ? accessEndsAt(subscription)
+        : currentPeriodEnd(subscription),
+      cancel_at_period_end: isCancelling(subscription),
       trial_end: toIso(subscription.trial_end),
       updated_at: new Date().toISOString(),
     },
