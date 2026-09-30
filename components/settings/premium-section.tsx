@@ -6,10 +6,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowUpRight, Check, Loader2, Sparkles } from "lucide-react";
 
 import { SettingsSection } from "@/components/settings/settings-section";
+import { FamilyMembers } from "@/components/settings/family-members";
 import { openBillingPortal } from "@/app/(dashboard)/premium/actions";
 import type { Entitlement } from "@/lib/subscription/entitlement";
 import type { BillingDetails } from "@/lib/subscription/billing";
-import { PLANS, PLAN_FEATURES, type PlanKey } from "@/lib/subscription/plans";
+import type { FamilyMember } from "@/lib/subscription/family";
+import {
+  FAMILY_MAX_MEMBERS,
+  PLANS,
+  PLAN_FEATURES,
+  type PlanKey,
+} from "@/lib/subscription/plans";
 
 /** Where Apple sends people to manage an App Store subscription. */
 const APPLE_SUBSCRIPTIONS_URL = "https://apps.apple.com/account/subscriptions";
@@ -35,10 +42,12 @@ export function PremiumSection({
   entitlement,
   usage,
   billing,
+  familyMembers,
 }: {
   entitlement: Entitlement;
   usage: { used: number; limit: number };
   billing: BillingDetails;
+  familyMembers: FamilyMember[];
 }) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -86,7 +95,11 @@ export function PremiumSection({
           Activating your subscription…
         </div>
       ) : entitlement.isPremium ? (
-        <PremiumState entitlement={entitlement} billing={billing} />
+        <PremiumState
+          entitlement={entitlement}
+          billing={billing}
+          familyMembers={familyMembers}
+        />
       ) : (
         <FreeState used={usage.used} limit={usage.limit} />
       )}
@@ -133,9 +146,11 @@ function FreeState({ used, limit }: { used: number; limit: number }) {
 function PremiumState({
   entitlement,
   billing,
+  familyMembers,
 }: {
   entitlement: Entitlement;
   billing: BillingDetails;
+  familyMembers: FamilyMember[];
 }) {
   const planName =
     entitlement.plan && entitlement.plan in PLANS
@@ -187,7 +202,8 @@ function PremiumState({
   if (entitlement.isFamilyOwner) {
     facts.push({
       label: "Family seats",
-      value: `${entitlement.familySeatsUsed} of 5 used`,
+      // The owner holds a seat too, matching the family list's count.
+      value: `${entitlement.familySeatsUsed + 1} of ${FAMILY_MAX_MEMBERS + 1} used`,
     });
   }
 
@@ -197,19 +213,21 @@ function PremiumState({
         {/* Two columns only at `xl`. The settings content column is at its
             NARROWEST just above `lg` -- that is where the nav rail moves
             alongside it -- so a `lg:` row would still collide. */}
-        <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
+        {/* Top-aligned so the plan sits at the top of the card, not centred
+            against the taller feature list. */}
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
-            <span className="text-xs font-semibold uppercase tracking-wide text-white/80">
+            <span className="block text-xs font-semibold uppercase leading-none tracking-wide text-white/80">
               {entitlement.source === "family" ? "Family member" : "Current plan"}
             </span>
 
-            <p className="mt-2 font-literata text-3xl font-semibold leading-tight">
+            <p className="mt-1.5 font-literata text-3xl font-semibold leading-tight">
               {planName}
             </p>
 
             {billing.amount ? (
               <p className="mt-1 flex items-baseline gap-1.5">
-                <span className="font-literata text-3xl font-semibold">
+                <span className="font-literata text-2xl font-semibold leading-tight">
                   {billing.amount}
                 </span>
                 {billing.interval ? (
@@ -260,6 +278,16 @@ function PremiumState({
       ) : null}
 
       <BillingControls entitlement={entitlement} />
+
+      {/* Owners manage their family here; members see it read-only. Someone
+          who owns a family plan *and* holds a seat elsewhere is shown as the
+          owner, matching `entitlement_get_status`, which resolves their own
+          subscription first. */}
+      {entitlement.isFamilyOwner ? (
+        <FamilyMembers members={familyMembers} isOwner />
+      ) : entitlement.source === "family" ? (
+        <FamilyMembers members={familyMembers} isOwner={false} />
+      ) : null}
     </div>
   );
 }
@@ -291,8 +319,7 @@ function BillingControls({ entitlement }: { entitlement: Entitlement }) {
   if (entitlement.source === "family") {
     return (
       <p className="mt-5 text-sm text-kitch-grey">
-        This plan is billed to its owner. Leave the family plan from the Kitch
-        app on iOS.
+        This plan is billed to its owner.
       </p>
     );
   }

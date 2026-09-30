@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
-import { DEFAULT_AUTH_REDIRECT } from "@/lib/auth/redirect";
+import { readNextFromLocation, withNextFromLocation } from "@/lib/auth/redirect";
 import { validateEmail, validatePassword } from "@/lib/auth/validation";
 
 const MAX_DISPLAY_NAME_LENGTH = 50;
@@ -55,6 +55,10 @@ export function SignUpForm() {
     const supabase = createClient();
     setIsLoading(true);
 
+    // Where they were headed before being sent to sign up -- a family invite,
+    // say. Falls back to the dashboard.
+    const next = readNextFromLocation();
+
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -64,7 +68,7 @@ export function SignUpForm() {
           // display_name, and to derive a unique username from it.
           data: { display_name: trimmedName },
           emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-            DEFAULT_AUTH_REDIRECT,
+            next,
           )}`,
         },
       });
@@ -78,7 +82,7 @@ export function SignUpForm() {
       // Email confirmation is off, so sign-up returns a live session. Fall back
       // to the confirmation screen if that ever changes.
       if (data.session) {
-        router.push(DEFAULT_AUTH_REDIRECT);
+        router.push(next);
         router.refresh();
       } else {
         router.push("/auth/sign-up-success");
@@ -154,7 +158,14 @@ export function SignUpForm() {
 
       <p className="mt-7 text-center text-sm text-kitch-charcoal">
         Already have an account?{" "}
-        <Link href="/auth/login" className={authLinkClassName}>
+        <Link
+          href="/auth/login"
+          onClick={(event) => {
+            event.preventDefault();
+            router.push(withNextFromLocation("/auth/login"));
+          }}
+          className={authLinkClassName}
+        >
           Log in.
         </Link>
       </p>

@@ -202,6 +202,51 @@ export type Database = {
         }
         Relationships: []
       }
+      family_invites: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          owner_id: string
+          responded_at: string | null
+          responded_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          owner_id: string
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          owner_id?: string
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_invites_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_invites_responded_by_fkey"
+            columns: ["responded_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       followers: {
         Row: {
           created_at: string
@@ -719,6 +764,40 @@ export type Database = {
           trial_end: string
         }[]
       }
+      family_get_members: {
+        Args: never
+        Returns: {
+          display_name: string
+          is_owner: boolean
+          is_self: boolean
+          joined_at: string
+          profile_pic_url: string
+          user_id: string
+          username: string
+        }[]
+      }
+      family_invite_check: {
+        Args: { p_invite_id: string }
+        Returns: {
+          owner_avatar_url: string
+          owner_display_name: string
+          owner_username: string
+          state: string
+        }[]
+      }
+      family_invite_create: { Args: never; Returns: string }
+      family_invite_respond: {
+        Args: { p_accept: boolean; p_invite_id: string }
+        Returns: string
+      }
+      family_invite_state: {
+        Args: { p_invite_id: string; p_user: string }
+        Returns: {
+          owner_id: string
+          state: string
+        }[]
+      }
+      family_owner_is_active: { Args: { p_owner: string }; Returns: boolean }
       FamilyPlan_JoinFamily_Accept: {
         Args: { p_owner_id: string; p_user_id: string }
         Returns: undefined

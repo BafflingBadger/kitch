@@ -19,7 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
-import { readNextFromLocation } from "@/lib/auth/redirect";
+import { readNextFromLocation, withNextFromLocation } from "@/lib/auth/redirect";
 import { validateEmail } from "@/lib/auth/validation";
 
 export function LoginForm() {
@@ -127,7 +127,14 @@ export function LoginForm() {
 
       <p className="mt-7 text-center text-sm text-kitch-charcoal">
         Don&apos;t have an account?{" "}
-        <Link href="/auth/sign-up" className={authLinkClassName}>
+        <Link
+          href="/auth/sign-up"
+          onClick={(event) => {
+            event.preventDefault();
+            router.push(withNextFromLocation("/auth/sign-up"));
+          }}
+          className={authLinkClassName}
+        >
           Sign up now.
         </Link>
       </p>

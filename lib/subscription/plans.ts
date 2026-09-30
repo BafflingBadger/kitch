@@ -62,6 +62,12 @@ export const PLANS: Record<PlanKey, Plan> = {
 
 export const PLAN_LIST: Plan[] = PLAN_KEYS.map((key) => PLANS[key]);
 
+/**
+ * People an owner can add to a Family plan. `seats` counts the owner, so this
+ * is one fewer. The database enforces the same number.
+ */
+export const FAMILY_MAX_MEMBERS = (PLANS.family.seats ?? 1) - 1;
+
 export function isPlanKey(value: unknown): value is PlanKey {
   return typeof value === "string" && (PLAN_KEYS as readonly string[]).includes(value);
 }

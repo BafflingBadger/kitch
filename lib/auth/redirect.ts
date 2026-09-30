@@ -27,3 +27,16 @@ export function readNextFromLocation(): string {
     new URLSearchParams(window.location.search).get("next"),
   );
 }
+
+/**
+ * `path` with the current page's `next` carried over, for links between the
+ * login and sign-up screens -- so someone who arrived from a family invite and
+ * switches to "Sign up" still lands back on the invite. Call it at click time,
+ * for the same reason as `readNextFromLocation`.
+ */
+export function withNextFromLocation(path: string): string {
+  if (typeof window === "undefined") return path;
+  const next = new URLSearchParams(window.location.search).get("next");
+  if (!next) return path;
+  return `${path}?next=${encodeURIComponent(safeRedirectPath(next))}`;
+}
