@@ -67,7 +67,7 @@ export function CookbookGrid({
               type="button"
               className="group flex h-[366px] flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-kitch-grey/30 text-center transition-colors hover:border-kitch-grey/50 hover:bg-kitch-cream-dark"
             >
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-kitch-cream-dark text-kitch-charcoal transition-colors group-hover:bg-kitch-cream">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-kitch-cream-dark text-kitch-charcoal">
                 <Plus className="h-5 w-5" />
               </span>
               <div>

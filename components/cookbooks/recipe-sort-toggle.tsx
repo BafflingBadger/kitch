@@ -158,17 +158,17 @@ export function RecipeSortToggle({
               className="w-full bg-transparent text-sm text-kitch-charcoal placeholder:text-kitch-grey focus:outline-none"
             />
           </div>
-          <div className="inline-flex items-center rounded-full border border-kitch-charcoal/10 bg-kitch-cream-dark p-1">
+          <div className="inline-flex items-center rounded-full bg-kitch-cream-dark p-1">
             {SORT_OPTIONS.map((option) => (
               <button
                 key={option.value}
                 type="button"
                 onClick={() => setSort(option.value)}
                 className={cn(
-                  "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+                  "rounded-full border px-4 py-1.5 text-sm font-medium transition-colors",
                   sort === option.value
-                    ? "bg-gradient-to-r from-kitch-orange-from to-kitch-orange-to text-white shadow-sm"
-                    : "text-kitch-charcoal/70",
+                    ? "border-kitch-charcoal/10 bg-white text-kitch-charcoal shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
+                    : "border-transparent text-kitch-grey hover:text-kitch-charcoal",
                 )}
               >
                 {option.label}

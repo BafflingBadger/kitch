@@ -7,20 +7,10 @@ import {
   BookOpen,
   Calendar,
   Compass,
-  LogOut,
-  MoreVertical,
   Settings,
   ShoppingCart,
 } from "lucide-react";
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar } from "@/components/ui/avatar";
-import { LogoutButton } from "@/components/logout-button";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -35,7 +25,7 @@ const navItems = [
   { href: "/discover", label: "Discover", icon: Compass },
 ];
 
-// Sits apart from the others, pinned above the profile row.
+// Sits apart from the others, pinned to the bottom of the sidebar.
 const settingsItem = { href: "/settings", label: "Settings", icon: Settings };
 
 type NavItem = {
@@ -45,15 +35,7 @@ type NavItem = {
   activePrefixes?: string[];
 };
 
-export function CookbookSidebar({
-  displayName,
-  planLabel,
-  avatarUrl,
-}: {
-  displayName: string;
-  planLabel: string;
-  avatarUrl?: string | null;
-}) {
+export function CookbookSidebar() {
   const pathname = usePathname();
 
   return (
@@ -70,68 +52,35 @@ export function CookbookSidebar({
             event.preventDefault();
             window.location.href = "/cookbooks";
           }}
-          // Gap is ~1/3 of the 30px wordmark.
-          className="flex items-center gap-2.5"
+          // Gap is ~1/3 of the 36px wordmark.
+          className="flex items-center gap-3"
         >
-          {/* Sized off the wordmark: `text-3xl` is 30px, so the hat is 36px
-              tall (1.2x). Its 1847x1474 source makes that 45px wide -- height
+          {/* Sized off the wordmark: `text-4xl` is 36px, so the hat is 43px
+              tall (1.2x). Its 1847x1474 source makes that 54px wide -- height
               is what's fixed, width follows. */}
           <Image
             src="/logo.png"
             alt="Kitch"
-            width={45}
-            height={36}
-            className="h-9 w-auto object-contain"
+            width={54}
+            height={43}
+            className="h-[43px] w-auto object-contain"
           />
-          <span className="font-literata text-3xl font-semibold leading-tight text-kitch-charcoal">
+          <span className="font-literata text-4xl font-semibold leading-tight text-kitch-charcoal">
             Kitch
           </span>
         </Link>
 
-        <nav className="mt-8 flex flex-col gap-1">
+        <nav className="mt-20 flex flex-col gap-1">
           {navItems.map((item) => (
             <NavLink key={item.href} item={item} pathname={pathname} />
           ))}
         </nav>
       </div>
 
-      <div>
+      <div className="border-t border-kitch-charcoal/10 pt-4">
         <nav className="flex flex-col gap-1">
           <NavLink item={settingsItem} pathname={pathname} />
         </nav>
-
-        <div className="mt-4 flex items-center gap-3 border-t border-kitch-charcoal/10 pt-4">
-          <Avatar
-            displayName={displayName}
-            avatarUrl={avatarUrl}
-            sizeClassName="h-9 w-9"
-          />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-kitch-charcoal">
-              {displayName}
-            </p>
-            <p className="text-xs text-kitch-grey">{planLabel}</p>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger className="text-kitch-grey hover:text-kitch-charcoal">
-              <MoreVertical className="h-4 w-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="w-44 rounded-xl border border-kitch-charcoal/10 bg-white p-1.5 text-kitch-charcoal shadow-lg"
-            >
-              <DropdownMenuItem
-                asChild
-                className="rounded-lg p-0 focus:bg-transparent"
-              >
-                <LogoutButton className="h-auto w-full justify-start gap-2 rounded-lg bg-transparent px-2.5 py-2 text-sm font-medium text-kitch-red shadow-none hover:bg-kitch-peach">
-                  <LogOut className="h-4 w-4" />
-                  Log out
-                </LogoutButton>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
       </div>
     </aside>
   );
@@ -150,10 +99,10 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
     <Link
       href={item.href}
       className={cn(
-        "flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-semibold transition-colors",
+        "flex items-center gap-3 rounded-2xl border px-3 py-2 text-[15px] transition-colors",
         isActive
-          ? "bg-white text-kitch-charcoal shadow-[0_2px_6px_rgba(0,0,0,0.1)]"
-          : "text-kitch-grey hover:bg-white/60",
+          ? "border-black/10 border-b-black/15 bg-white bg-clip-padding text-kitch-charcoal shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
+          : "border-transparent text-kitch-grey hover:bg-white/60",
       )}
     >
       <span

@@ -4,10 +4,10 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CookbookSidebar } from "@/components/cookbooks/cookbook-sidebar";
 import { CookbookTopbar } from "@/components/cookbooks/cookbook-topbar";
+import { ProfileMenu } from "@/components/cookbooks/profile-menu";
 import { getEntitlement } from "@/lib/subscription/entitlement";
-import { PLANS } from "@/lib/subscription/plans";
 
-async function SidebarUser() {
+async function TopbarProfile() {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
 
@@ -30,21 +30,12 @@ async function SidebarUser() {
   const displayName = profile?.display_name ?? email?.split("@")[0] ?? "there";
 
   return (
-    <CookbookSidebar
+    <ProfileMenu
       displayName={displayName}
-      planLabel={planLabelFor(entitlement.plan, entitlement.isPremium)}
+      planLabel={entitlement.isPremium ? "Premium Plan" : "Free Plan"}
       avatarUrl={profile?.profile_pic_url ?? null}
     />
   );
-}
-
-/** e.g. "Premium · Annual", or "Free Plan" for everyone else. */
-function planLabelFor(plan: string | null, isPremium: boolean): string {
-  if (!isPremium) return "Free Plan";
-  if (plan && plan in PLANS) {
-    return `Premium · ${PLANS[plan as keyof typeof PLANS].name}`;
-  }
-  return "Premium";
 }
 
 export default function DashboardLayout({
@@ -54,15 +45,21 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="flex h-screen overflow-hidden bg-kitch-cream">
+      {/* usePathname on a dynamic route counts as request data under Cache
+          Components, so the sidebar still needs a boundary. */}
       <Suspense fallback={<div className="w-72 shrink-0 bg-kitch-cream-dark" />}>
-        <SidebarUser />
+        <CookbookSidebar />
       </Suspense>
       <div className="flex-1 overflow-y-auto">
-        <div className="px-8 py-4">
-          {/* The topbar reads import quota, so it suspends; reserve its height
-              to keep the page from jumping as it resolves. */}
-          <Suspense fallback={<div className="h-[42px]" />}>
+        <div className="flex items-center justify-between gap-4 px-8 py-4">
+          {/* The topbar reads import quota and the profile reads the user row,
+              so both suspend; reserve their size to keep the page from jumping
+              as they resolve. */}
+          <Suspense fallback={<div className="h-[50px] flex-1" />}>
             <CookbookTopbar />
+          </Suspense>
+          <Suspense fallback={<div className="h-[50px] w-48" />}>
+            <TopbarProfile />
           </Suspense>
         </div>
         <div className="border-b border-kitch-charcoal/10" />

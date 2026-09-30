@@ -59,7 +59,7 @@ export function CookbookCard(props: CookbookCardProps) {
     <Link
       href={href}
       prefetch={false}
-      className="group relative flex h-[366px] flex-col overflow-hidden rounded-2xl border border-kitch-charcoal/10 bg-white shadow-sm transition-shadow hover:shadow-md"
+      className="group relative flex h-[366px] flex-col overflow-hidden rounded-2xl border border-kitch-charcoal/15 bg-white shadow-[0_1px_1px_rgba(0,0,0,0.06)] transition-shadow hover:shadow-[0_2px_4px_rgba(0,0,0,0.08)]"
     >
       {props.variant === "standard" && !props.readOnly ? (
         <CookbookCardMenu cookbookId={props.id} cookbookTitle={props.title} />
