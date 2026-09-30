@@ -8,7 +8,8 @@
     "db:types": "supabase gen types typescript --linked > lib/database.types.ts",
     "functions:pull": "supabase functions download import-recipe",
     "functions:deploy": "supabase functions deploy import-recipe",
-    "functions:deploy:stripe": "supabase functions deploy stripe-webhook"
+    "functions:deploy:stripe": "supabase functions deploy stripe-webhook",
+    "functions:deploy:transfer": "supabase functions deploy transfer-subscription"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.1",

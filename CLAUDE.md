@@ -11,6 +11,7 @@ npm run lint                   # ESLint
 npm run db:types               # Regenerate lib/database.types.ts from the linked project
 npm run functions:deploy       # Deploy the import-recipe edge function
 npm run functions:deploy:stripe # Deploy the stripe-webhook edge function
+npm run functions:deploy:transfer # Deploy the transfer-subscription edge function
 ```
 
 There is no test suite. Verification is done by running the app and checking
@@ -170,12 +171,13 @@ proxy before Supabase is configured.
 ## Edge functions
 
 **In the repo:** `import-recipe` (BrightData scrape → OpenAI → `Recipe_Write`),
-`stripe-webhook`.
+`stripe-webhook`, `transfer-subscription` (re-keys an Apple subscription to
+the caller's own account, and moves a Family plan's seats and pending invites
+with it via `family_transfer_owner()`).
 
 **Deployed but NOT in the repo** — read them with the Supabase MCP
 `get_edge_function` tool, and never assume the repo is the full picture:
-`verify-subscription`, `transfer-subscription`, `apple-subscription-webhook`,
-`log-exception`.
+`verify-subscription`, `apple-subscription-webhook`, `log-exception`.
 
 ## Database workflow
 
