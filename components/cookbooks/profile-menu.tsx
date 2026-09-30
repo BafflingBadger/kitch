@@ -28,6 +28,7 @@ export function ProfileMenu({
           displayName={displayName}
           avatarUrl={avatarUrl}
           sizeClassName="h-9 w-9"
+          className="rounded-xl"
         />
         <div className="min-w-0">
           <p className="max-w-40 truncate text-sm font-semibold text-kitch-charcoal">

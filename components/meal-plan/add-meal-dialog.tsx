@@ -261,7 +261,7 @@ export function AddMealDialog(props: AddMealDialogProps) {
                   }}
                   aria-label={searchOpen ? "Close search" : "Search recipes"}
                   className={cn(
-                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-colors",
+                    "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-colors",
                     searchOpen
                       ? "border-kitch-charcoal/10 bg-kitch-cream-dark text-kitch-charcoal"
                       : "border-kitch-charcoal/10 bg-kitch-cream text-kitch-grey hover:bg-kitch-cream-dark",
@@ -270,7 +270,7 @@ export function AddMealDialog(props: AddMealDialogProps) {
                   {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
                 </button>
                 <DropdownMenu>
-                  <DropdownMenuTrigger className="flex h-10 w-[236px] shrink-0 items-center justify-between rounded-full border border-kitch-charcoal/15 bg-kitch-cream px-4 text-sm text-kitch-charcoal shadow-sm outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                  <DropdownMenuTrigger className="flex h-11 w-[236px] shrink-0 items-center justify-between rounded-full border border-kitch-charcoal/15 bg-kitch-cream px-4 text-sm text-kitch-charcoal shadow-sm outline-none focus-visible:ring-1 focus-visible:ring-ring">
                     <span className="truncate">{selectedCookbookLabel}</span>
                     <ChevronDown className="h-4 w-4 shrink-0 text-kitch-grey" />
                   </DropdownMenuTrigger>
@@ -310,7 +310,7 @@ export function AddMealDialog(props: AddMealDialogProps) {
                     })}
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <div className="inline-flex shrink-0 items-center rounded-full bg-kitch-cream-dark p-1">
+                <div className="inline-flex shrink-0 items-center rounded-full border border-kitch-charcoal/10 bg-kitch-cream-dark p-1">
                   {SORT_OPTIONS.map((option) => (
                     <button
                       key={option.value}
@@ -330,7 +330,7 @@ export function AddMealDialog(props: AddMealDialogProps) {
               </div>
 
               {searchOpen ? (
-                <div className="hidden h-10 items-center gap-2 rounded-full border border-kitch-charcoal/10 bg-kitch-cream px-4 duration-200 animate-in slide-in-from-top-2 sm:flex">
+                <div className="hidden h-11 items-center gap-2 rounded-full border border-kitch-charcoal/10 bg-kitch-cream px-4 duration-200 animate-in slide-in-from-top-2 sm:flex">
                   <Search className="h-4 w-4 shrink-0 text-kitch-grey" />
                   <input
                     ref={searchInputRef}

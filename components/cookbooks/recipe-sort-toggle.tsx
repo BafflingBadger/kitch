@@ -86,7 +86,7 @@ export function RecipeSortToggle({
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-start justify-between gap-4">
         <Link
           href={topBackHref}
           className="inline-flex items-center gap-1.5 text-sm font-medium text-kitch-grey transition-colors hover:text-kitch-charcoal"
@@ -131,7 +131,7 @@ export function RecipeSortToggle({
         ) : null}
       </div>
 
-      <h1 className="mt-4 font-literata text-4xl font-semibold text-kitch-charcoal">{title}</h1>
+      <h1 className="mt-2 font-literata text-4xl font-semibold text-kitch-charcoal">{title}</h1>
 
       {readOnly && ownerName && ownerId ? (
         <Link
@@ -143,12 +143,12 @@ export function RecipeSortToggle({
         </Link>
       ) : null}
 
-      <div className="mt-6 flex items-center justify-between gap-4">
+      <div className="mt-3 flex items-center justify-between gap-4">
         <p className="text-sm text-kitch-grey">
           {recipeCountLabel} • {relativeUpdateLabel(filteredRecipes)}
         </p>
         <div className="flex shrink-0 items-center gap-3">
-          <div className="flex w-56 items-center gap-2 rounded-full border border-kitch-charcoal/10 bg-kitch-cream-dark px-3.5 py-2 focus-within:border-kitch-red/40">
+          <div className="flex w-56 items-center gap-2 rounded-full border border-kitch-charcoal/10 bg-kitch-cream-dark px-3.5 py-[11px] focus-within:border-kitch-red/40">
             <Search className="h-4 w-4 shrink-0 text-kitch-grey" />
             <input
               type="text"
@@ -158,7 +158,7 @@ export function RecipeSortToggle({
               className="w-full bg-transparent text-sm text-kitch-charcoal placeholder:text-kitch-grey focus:outline-none"
             />
           </div>
-          <div className="inline-flex items-center rounded-full bg-kitch-cream-dark p-1">
+          <div className="inline-flex items-center rounded-full border border-kitch-charcoal/10 bg-kitch-cream-dark p-1">
             {SORT_OPTIONS.map((option) => (
               <button
                 key={option.value}
@@ -178,7 +178,7 @@ export function RecipeSortToggle({
         </div>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-5">
         <RecipeGrid
           recipes={sortedRecipes}
           backHref={backHref}

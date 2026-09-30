@@ -26,7 +26,7 @@ export function CookbookToggle({
           </h1>
           <p className="mt-2 text-sm text-kitch-grey">{subtext}</p>
         </div>
-        <div className="inline-flex items-center rounded-full bg-kitch-cream-dark p-1">
+        <div className="inline-flex items-center rounded-full border border-kitch-charcoal/10 bg-kitch-cream-dark p-1">
           {(["personal", "following"] as const).map((value) => (
             <button
               key={value}
