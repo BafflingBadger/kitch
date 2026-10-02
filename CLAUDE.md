@@ -17,19 +17,14 @@ npm run functions:deploy:transfer # Deploy the transfer-subscription edge functi
 There is no test suite. Verification is done by running the app and checking
 behaviour directly.
 
-> **`npm run build` currently fails at prerender on `/`** — "Uncached data was
-> accessed outside of `<Suspense>`". [app/page.tsx](app/page.tsx) calls
-> `getClaims()` at the top level, which Next 16's Cache Components rejects.
-> Pre-existing and unrelated to any feature work; the TypeScript stage still
-> runs first, so the build is usable as a typecheck.
+Before every deploy, `npm run lint` and `npm run build` must both pass. The
+build also runs the typecheck.
 
 ## What this is
 
 Kitch: a recipe manager with an iOS app and this web app sharing one Supabase
-project. The repo began as the Next.js + Supabase Starter Kit, and some starter
-files survive (`app/protected/`, `components/tutorial/`, `components/hero.tsx`,
-`deploy-button.tsx`, `next-logo.tsx`, `supabase-logo.tsx`) — nothing in the app
-links to them.
+project. The repo began as the Next.js + Supabase Starter Kit; its demo pages have been
+removed.
 
 **The iOS app hits the same database and the same edge functions.** Changing a
 shared RPC's signature, or the behaviour of `import-recipe`, changes the shipped
@@ -65,12 +60,16 @@ server sessions desync.
 - **Pages are Server Components** that read via `lib/supabase/server.ts`, usually with `Promise.all` for parallel queries, wrapped in `<Suspense>`.
 - **Mutations and search-as-you-type go through `"use server"` action files** (`app/(dashboard)/*/actions.ts`), called from Client Components inside `useTransition`.
 - **Every action returns the same discriminated union**: `{ ok: true, ... } | { ok: false, error: string }`. Follow this.
+- **Actions are public endpoints**, so validate inputs server-side: length and list caps live in [lib/validation/limits.ts](lib/validation/limits.ts). Never accept a storage path or image URL from the client unless it is one the uploader just produced — the storage delete policies trust those columns.
+- **`public.users.email` is always `''`**: every signed-in user can read that table. Get the caller's email from claims or `getUser()`, and other users' emails only through a `security definer` function reading `auth.users` (as `Households_ReadAllMembers` and `FamilyPlan_ReadAllMembers` do). The column stays `NOT NULL` because iOS decodes it as a non-optional `String`.
 - Identity comes from `supabase.auth.getClaims()` → `claims.sub`. `getUser()` is used in exactly one place ([settings/page.tsx](app/(dashboard)/settings/page.tsx)), which documents why.
 - No SWR/React Query. `hooks/` holds one hook and it does no fetching.
 
 ### Routes
 
-- `/` — no marketing page; redirects to the dashboard or `/auth/login`.
+- `/` — no marketing page. The proxy redirects it to the dashboard or
+  `/auth/login`; [app/page.tsx](app/page.tsx) must stay free of request data, or
+  the Cache Components prerender fails the build.
 - `/auth/*` — login, sign-up, forgot/update password, callback + confirm route handlers, error page.
 - `/legal/*` — terms, privacy. Public.
 - `(dashboard)` group — authenticated app behind [app/(dashboard)/layout.tsx](app/(dashboard)/layout.tsx): `/cookbooks` (the home screen, labelled "Recipes"), `/recipes/[id]` and `/recipes/[id]/edit`, `/meal-prep`, `/grocery-list`, `/discover`, `/users/[id]`, `/settings`, `/premium`.
@@ -167,6 +166,17 @@ injected automatically — never add it to `.env.local`.
 
 `hasEnvVars` in [lib/utils.ts](lib/utils.ts) gates the auth UI and no-ops the
 proxy before Supabase is configured.
+
+## Deployment
+
+Production is Vercel at `https://www.cookwithkitch.com` (apex redirects to www);
+pushes to `main` deploy it. Preview deployments and local dev all hit the
+**same production Supabase project**. Security headers are set in
+[next.config.ts](next.config.ts). `SITE_URL` must be set in Vercel —
+`getSiteUrl()` throws in production without it. Stripe env vars are
+deliberately **absent from Vercel Production** until Stripe goes live: with
+test keys, anyone could check out with a test card and receive real Premium on
+web and iOS.
 
 ## Edge functions
 

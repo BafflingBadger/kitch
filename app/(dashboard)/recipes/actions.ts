@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { LIMITS } from "@/lib/validation/limits";
 import { getImportUsage } from "@/lib/subscription/entitlement";
 
 /**
@@ -87,8 +88,14 @@ async function invokeImportRecipe(body: { urlText?: string; images?: string[] })
 }
 
 export async function importRecipeFromImages(images: string[]) {
-  if (!images.length) {
+  if (!Array.isArray(images) || !images.length) {
     return { ok: false as const, error: "No images provided" };
+  }
+  if (images.length > LIMITS.importImages || !images.every((image) => typeof image === "string")) {
+    return {
+      ok: false as const,
+      error: `You can import up to ${LIMITS.importImages} pages at a time`,
+    };
   }
   return invokeImportRecipe({ images });
 }
@@ -98,10 +105,19 @@ export async function importRecipeFromUrl(urlText: string) {
   if (!trimmed) {
     return { ok: false as const, error: "No link provided" };
   }
+  if (trimmed.length > LIMITS.importUrl) {
+    return { ok: false as const, error: "That link is too long" };
+  }
+  let parsed: URL;
   try {
-    new URL(trimmed);
+    parsed = new URL(trimmed);
   } catch {
     return { ok: false as const, error: "That doesn't look like a valid URL" };
+  }
+  // Only web pages -- never file:, data:, javascript: or anything else the
+  // scraper might be coaxed into resolving.
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    return { ok: false as const, error: "Please paste a web link (http or https)" };
   }
   return invokeImportRecipe({ urlText: trimmed });
 }

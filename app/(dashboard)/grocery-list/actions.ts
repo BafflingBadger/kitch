@@ -3,11 +3,15 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { LIMITS } from "@/lib/validation/limits";
 
 export async function addGroceryItem(name: string) {
   const trimmed = name.trim();
   if (!trimmed) {
     return { ok: false as const, error: "Item name is required" };
+  }
+  if (trimmed.length > LIMITS.groceryItem) {
+    return { ok: false as const, error: `Items can be up to ${LIMITS.groceryItem} characters` };
   }
 
   const supabase = await createClient();
@@ -33,6 +37,13 @@ export async function addGroceryItem(name: string) {
 }
 
 export async function addGroceryItems(names: string[]) {
+  if (
+    !Array.isArray(names) ||
+    names.length > LIMITS.groceryBatch ||
+    !names.every((name) => typeof name === "string" && name.length <= LIMITS.groceryItem)
+  ) {
+    return { ok: false as const, error: "Invalid grocery items" };
+  }
   const trimmedNames = names.map((name) => name.trim()).filter(Boolean);
   if (trimmedNames.length === 0) {
     return { ok: false as const, error: "No items to add" };
@@ -92,6 +103,9 @@ export async function renameGroceryItem(itemId: number, name: string) {
   const trimmed = name.trim();
   if (!trimmed) {
     return { ok: false as const, error: "Item name is required" };
+  }
+  if (trimmed.length > LIMITS.groceryItem) {
+    return { ok: false as const, error: `Items can be up to ${LIMITS.groceryItem} characters` };
   }
 
   const supabase = await createClient();

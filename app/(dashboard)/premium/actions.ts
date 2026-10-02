@@ -36,10 +36,8 @@ export async function startCheckout(plan: PlanKey): Promise<ActionResult> {
 
   const priceId = getPriceId(plan);
   if (!priceId) {
-    return {
-      ok: false,
-      error: `Checkout isn't configured yet — ${PLANS[plan].priceEnvVar} is not set.`,
-    };
+    console.error(`Checkout unavailable: ${PLANS[plan].priceEnvVar} is not set.`);
+    return { ok: false, error: "Checkout isn't available right now." };
   }
 
   // Don't let someone buy a second subscription on top of one they're already
@@ -68,10 +66,10 @@ export async function startCheckout(plan: PlanKey): Promise<ActionResult> {
     .eq("user_id", userId)
     .maybeSingle();
 
-  const siteUrl = getSiteUrl();
   const trialDays = PLANS[plan].trialDays;
 
   try {
+    const siteUrl = getSiteUrl();
     const stripe = getStripe();
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
@@ -97,8 +95,10 @@ export async function startCheckout(plan: PlanKey): Promise<ActionResult> {
 
     return { ok: true, url: session.url };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Could not start checkout";
-    return { ok: false, error: message };
+    // Stripe's own message can name prices, customers and config -- log it,
+    // don't show it.
+    console.error("Could not start checkout:", error instanceof Error ? error.message : error);
+    return { ok: false, error: "Could not start checkout. Please try again." };
   }
 }
 
@@ -133,7 +133,7 @@ export async function openBillingPortal(): Promise<ActionResult> {
     });
     return { ok: true, url: session.url };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Could not open billing portal";
-    return { ok: false, error: message };
+    console.error("Could not open billing portal:", error instanceof Error ? error.message : error);
+    return { ok: false, error: "Could not open the billing portal. Please try again." };
   }
 }

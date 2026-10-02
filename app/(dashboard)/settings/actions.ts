@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { LIMITS } from "@/lib/validation/limits";
 import { normalizeUsername, validateUsername } from "@/lib/auth/username";
 
 /** Thrown by `delete_own_account()` when the session is not freshly authenticated. */
@@ -43,6 +44,12 @@ export async function updateProfile(input: {
   if (!displayName) {
     return { ok: false as const, error: "Please enter a display name." };
   }
+  if (displayName.length > LIMITS.displayName) {
+    return {
+      ok: false as const,
+      error: `Display names can be up to ${LIMITS.displayName} characters.`,
+    };
+  }
 
   const usernameError = validateUsername(input.username);
   if (usernameError) {
@@ -56,6 +63,26 @@ export async function updateProfile(input: {
     return { ok: false as const, error: "Not authenticated" };
   }
   const userId = claimsData.claims.sub;
+
+  // A new picture must be an image in our own bucket (what the avatar uploader
+  // produces), or none. Anything else could aim the OAuth avatar mirror at an
+  // arbitrary URL, or claim another user's file so the delete policy would let
+  // us remove it. Leaving the current value alone is always allowed -- it may
+  // be a provider URL from sign-up that was never rehosted.
+  const ownAvatarPrefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL}${AVATAR_MARKER}`;
+  if (
+    input.profilePicUrl !== null &&
+    !input.profilePicUrl.startsWith(ownAvatarPrefix)
+  ) {
+    const { data: current } = await supabase
+      .from("users")
+      .select("profile_pic_url")
+      .eq("id", userId)
+      .maybeSingle();
+    if (input.profilePicUrl !== current?.profile_pic_url) {
+      return { ok: false as const, error: "That profile picture isn't valid." };
+    }
+  }
 
   const { error } = await supabase
     .from("users")

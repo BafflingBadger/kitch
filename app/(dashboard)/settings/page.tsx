@@ -33,7 +33,7 @@ async function SettingsContent() {
   ] = await Promise.all([
     supabase
       .from("users")
-      .select("display_name, username, profile_pic_url, email")
+      .select("display_name, username, profile_pic_url")
       .eq("id", userId)
       .maybeSingle(),
     supabase.auth.getUser(),
@@ -44,7 +44,9 @@ async function SettingsContent() {
   ]);
 
   const claimEmail = claimsData.claims.email as string | undefined;
-  const email = userData.user?.email ?? profile?.email ?? claimEmail ?? "";
+  // Not from `public.users` -- its email column is deliberately blank, since
+  // every signed-in user can read that table. auth.users is the source of truth.
+  const email = userData.user?.email ?? claimEmail ?? "";
 
   // Asks the database directly rather than inferring from identities: unlinking
   // an `email` identity leaves the password in place, and setting a password

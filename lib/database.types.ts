@@ -798,6 +798,10 @@ export type Database = {
         }[]
       }
       family_owner_is_active: { Args: { p_owner: string }; Returns: boolean }
+      family_transfer_owner: {
+        Args: { p_from: string; p_to: string }
+        Returns: number
+      }
       FamilyPlan_JoinFamily_Accept: {
         Args: { p_owner_id: string; p_user_id: string }
         Returns: undefined
@@ -868,6 +872,10 @@ export type Database = {
       Recipes_Read: { Args: { _recipe_id: number }; Returns: Json }
       Recipes_ReadAll: { Args: { _user_id: string }; Returns: Json }
       Recipes_ReadAllFollowing: { Args: { p_user_id: string }; Returns: Json }
+      storage_object_shared_with_others: {
+        Args: { p_bucket: string; p_name: string }
+        Returns: boolean
+      }
       Subscriptions_GetStatus: {
         Args: { p_user_id: string }
         Returns: {

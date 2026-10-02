@@ -10,6 +10,9 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  // Build output, and the Deno edge functions (a different runtime with its own
+  // conventions) -- linting them only buries real findings.
+  { ignores: [".next/**", "supabase/functions/**"] },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
 ];
 

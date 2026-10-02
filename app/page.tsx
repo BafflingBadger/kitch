@@ -1,17 +1,14 @@
 import { redirect } from "next/navigation";
 
-import { createClient } from "@/lib/supabase/server";
-import { DEFAULT_AUTH_REDIRECT } from "@/lib/auth/redirect";
-
 /**
  * The app has no marketing page of its own -- that lives on the main site -- so
  * "/" just routes people to wherever they should actually be.
  *
- * The proxy lets "/" through without a session precisely so this can decide.
+ * The real decision is made in the proxy (lib/supabase/proxy.ts), which sends
+ * signed-in users to the dashboard. This page only runs if the proxy is skipped
+ * (no Supabase env configured), and it must not read the session itself:
+ * request data at the top level of a page fails the Cache Components prerender.
  */
-export default async function Home() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
-
-  redirect(data?.claims ? DEFAULT_AUTH_REDIRECT : "/auth/login");
+export default function Home() {
+  redirect("/auth/login");
 }

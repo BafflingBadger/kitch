@@ -3,10 +3,47 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { LIMITS, isIdList } from "@/lib/validation/limits";
 
 function recipeThumbnailUrl(path: string | null | undefined) {
   if (!path) return null;
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/recipes/${path}`;
+}
+
+/** What `RecipeImageUpload` writes: `public/<uuid>.<ext>`. */
+const UPLOADED_THUMBNAIL =
+  /^public\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp|heic)$/;
+
+type RecipeRow = { desc: string; is_heading: boolean };
+
+function isRecipeRowList(value: unknown): value is RecipeRow[] {
+  return (
+    Array.isArray(value) &&
+    value.length <= LIMITS.recipeRows &&
+    value.every(
+      (row) =>
+        typeof row?.desc === "string" &&
+        row.desc.length <= LIMITS.recipeLine &&
+        typeof row.is_heading === "boolean",
+    )
+  );
+}
+
+function validateRecipeInput(
+  name: string,
+  input: { notes: unknown; thumbnail: unknown; ingredients: unknown; directions: unknown },
+): string | null {
+  if (name.length > LIMITS.recipeName) {
+    return `Recipe names can be up to ${LIMITS.recipeName} characters`;
+  }
+  if (input.notes !== null && typeof input.notes !== "string") return "Invalid notes";
+  if (typeof input.notes === "string" && input.notes.length > LIMITS.recipeNotes) {
+    return `Notes can be up to ${LIMITS.recipeNotes} characters`;
+  }
+  if (input.thumbnail !== null && typeof input.thumbnail !== "string") return "Invalid image";
+  if (!isRecipeRowList(input.ingredients)) return "Invalid ingredient list";
+  if (!isRecipeRowList(input.directions)) return "Invalid direction list";
+  return null;
 }
 
 export async function updateRecipeRating(recipeId: number, rating: number) {
@@ -61,6 +98,10 @@ export async function updateRecipe(
   if (!Number.isInteger(input.rating) || input.rating < 0 || input.rating > 5) {
     return { ok: false as const, error: "Rating must be between 0 and 5" };
   }
+  const inputError = validateRecipeInput(trimmedName, input);
+  if (inputError) {
+    return { ok: false as const, error: inputError };
+  }
 
   const supabase = await createClient();
   const { data: claimsData, error: authError } = await supabase.auth.getClaims();
@@ -71,12 +112,23 @@ export async function updateRecipe(
 
   const { data: recipe } = await supabase
     .from("recipes")
-    .select("id")
+    .select("id, thumbnail")
     .eq("id", recipeId)
     .eq("user_id", userId)
     .maybeSingle();
   if (!recipe) {
     return { ok: false as const, error: "Recipe not found" };
+  }
+
+  // A new thumbnail must be a file the web uploader just produced. Pointing it
+  // at an existing object would let the recipes-bucket delete policy -- which
+  // trusts whatever `thumbnail` names -- remove someone else's image.
+  if (
+    input.thumbnail !== null &&
+    input.thumbnail !== recipe.thumbnail &&
+    !UPLOADED_THUMBNAIL.test(input.thumbnail)
+  ) {
+    return { ok: false as const, error: "That image isn't valid" };
   }
 
   const { error: updateError } = await supabase
@@ -205,6 +257,9 @@ export async function createCookbook(title: string) {
   if (!trimmedTitle) {
     return { ok: false as const, error: "Cookbook name is required" };
   }
+  if (trimmedTitle.length > LIMITS.cookbookTitle) {
+    return { ok: false as const, error: `Cookbook names can be up to ${LIMITS.cookbookTitle} characters` };
+  }
 
   const supabase = await createClient();
   const { data: claimsData, error: authError } = await supabase.auth.getClaims();
@@ -231,6 +286,9 @@ export async function createCookbook(title: string) {
 export async function saveRecipeCookbooks(recipeId: number, cookbookIds: number[]) {
   if (!Number.isInteger(recipeId) || recipeId <= 0) {
     return { ok: false as const, error: "Invalid recipe id" };
+  }
+  if (!isIdList(cookbookIds)) {
+    return { ok: false as const, error: "Invalid cookbook list" };
   }
 
   const supabase = await createClient();

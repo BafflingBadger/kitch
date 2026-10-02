@@ -39,7 +39,14 @@ export function getPriceId(plan: PlanKey): string | null {
  * request header, which the caller controls and could point at another origin.
  */
 export function getSiteUrl(): string {
-  return process.env.SITE_URL ?? "http://localhost:3000";
+  const siteUrl = process.env.SITE_URL;
+  if (siteUrl) return siteUrl;
+  // Falling back to localhost in production would send paying customers back
+  // to a URL that doesn't exist -- fail loudly instead.
+  if (process.env.VERCEL_ENV === "production") {
+    throw new Error("SITE_URL is not set");
+  }
+  return "http://localhost:3000";
 }
 
 /** Stripe stores minor units; drop the cents on whole amounts. */

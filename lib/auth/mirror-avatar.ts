@@ -3,9 +3,28 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 
 const BUCKET = "profiles";
-const STORAGE_MARKER = `/storage/v1/object/public/${BUCKET}/`;
+const OWN_AVATAR_PREFIX = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET}/`;
 const FETCH_TIMEOUT_MS = 5000;
 const MAX_BYTES = 5 * 1024 * 1024; // matches the bucket's file size limit
+
+/**
+ * Only provider avatar hosts are ever fetched. `profile_pic_url` is
+ * user-writable, so fetching whatever it holds would let anyone point this
+ * server at an internal address and read the response back out of the bucket.
+ * Apple supplies no avatar, so Google's image CDN is the whole list.
+ */
+function isProviderAvatarUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return (
+      url.protocol === "https:" &&
+      (url.hostname === "googleusercontent.com" ||
+        url.hostname.endsWith(".googleusercontent.com"))
+    );
+  } catch {
+    return false;
+  }
+}
 
 // Google hands back PNGs as often as JPEGs, so the extension is derived from
 // the response rather than assumed.
@@ -53,10 +72,14 @@ export async function mirrorProviderAvatar(
 
     // Already rehosted, or the user chose their own avatar. Without this, every
     // sign-in would upload a fresh copy and orphan the previous one.
-    if (current.includes(STORAGE_MARKER)) return;
+    if (current.startsWith(OWN_AVATAR_PREFIX)) return;
+
+    if (!isProviderAvatarUrl(current)) return;
 
     const response = await fetch(current, {
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      // A redirect could hop from the allowed host to an internal one.
+      redirect: "error",
     });
     if (!response.ok) return;
 

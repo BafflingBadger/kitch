@@ -6,6 +6,13 @@ import { Camera } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { CoverImage } from "@/components/cookbooks/cover-image";
 
+const EXTENSION_BY_TYPE: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/heic": "heic",
+};
+
 export function RecipeImageUpload({
   imageUrl,
   name,
@@ -32,7 +39,8 @@ export function RecipeImageUpload({
     setError(null);
     setIsUploading(true);
 
-    const extension = file.name.includes(".") ? file.name.split(".").pop() : "jpg";
+    // From the MIME type, not the file name -- a name is just a user-chosen label.
+    const extension = EXTENSION_BY_TYPE[file.type.toLowerCase()] ?? "jpg";
     const path = `public/${crypto.randomUUID()}.${extension}`;
 
     const supabase = createClient();

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { LIMITS, isIdList } from "@/lib/validation/limits";
 
 function recipeThumbnailUrl(path: string | null | undefined) {
   if (!path) return null;
@@ -80,9 +81,15 @@ export async function createCookbookWithDetails(input: {
   recipeIds: number[];
   thumbnailRecipeId: number | null;
 }) {
+  if (!isIdList(input.recipeIds)) {
+    return { ok: false as const, error: "Invalid recipe list" };
+  }
   const trimmedTitle = input.title.trim();
   if (!trimmedTitle) {
     return { ok: false as const, error: "Cookbook name is required" };
+  }
+  if (trimmedTitle.length > LIMITS.cookbookTitle) {
+    return { ok: false as const, error: `Cookbook names can be up to ${LIMITS.cookbookTitle} characters` };
   }
 
   const supabase = await createClient();
@@ -144,9 +151,15 @@ export async function updateCookbookDetails(input: {
   if (!Number.isInteger(input.cookbookId) || input.cookbookId <= 0) {
     return { ok: false as const, error: "Invalid cookbook id" };
   }
+  if (!isIdList(input.recipeIds)) {
+    return { ok: false as const, error: "Invalid recipe list" };
+  }
   const trimmedTitle = input.title.trim();
   if (!trimmedTitle) {
     return { ok: false as const, error: "Cookbook name is required" };
+  }
+  if (trimmedTitle.length > LIMITS.cookbookTitle) {
+    return { ok: false as const, error: `Cookbook names can be up to ${LIMITS.cookbookTitle} characters` };
   }
 
   const supabase = await createClient();
