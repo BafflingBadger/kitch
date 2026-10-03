@@ -17,9 +17,18 @@ export async function joinAndroidWaitlist(email: unknown) {
     return { ok: false as const, error: "Please enter a valid email address" };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("android_waitlist_join", { p_email: trimmed });
-  if (error) {
+  // Anything thrown here (a misconfigured environment, a network failure)
+  // would otherwise surface as Next's error page instead of a message in the
+  // dialog. Log the real cause so it shows up in the runtime logs.
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("android_waitlist_join", { p_email: trimmed });
+    if (error) {
+      console.error("android_waitlist_join failed", error);
+      return { ok: false as const, error: "Unable to submit. Please try again." };
+    }
+  } catch (error) {
+    console.error("joinAndroidWaitlist threw", error);
     return { ok: false as const, error: "Unable to submit. Please try again." };
   }
 

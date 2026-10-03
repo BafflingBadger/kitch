@@ -19,8 +19,11 @@ export const metadata: Metadata = {
  * Components prerender.
  */
 export default function LandingPage() {
+  // The page is always light, but next-themes sets `color-scheme: dark` on
+  // <html> for dark-mode devices, which makes Chrome paint autofilled fields
+  // gray with white text. Pin the scheme back to light for the whole page.
   return (
-    <main className="min-h-screen bg-kitch-cream text-kitch-charcoal">
+    <main className="min-h-screen bg-kitch-cream text-kitch-charcoal [color-scheme:light]">
       <HeroSection />
       <FeaturesSection />
       <PricingSection />

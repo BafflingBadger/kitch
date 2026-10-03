@@ -95,4 +95,21 @@
     -webkit-text-fill-color: hsl(var(--kitch-charcoal));
     caret-color: hsl(var(--kitch-charcoal));
   }
+
+  /*
+   * The same fix for inputs on white. Tailwind's `ring-*` is also a box-shadow,
+   * so the ring variables are composed in -- otherwise the inset fill would
+   * replace the focus ring on an autofilled field.
+   */
+  .autofill-white:-webkit-autofill,
+  .autofill-white:-webkit-autofill:hover,
+  .autofill-white:-webkit-autofill:focus,
+  .autofill-white:-webkit-autofill:active {
+    box-shadow:
+      var(--tw-ring-offset-shadow, 0 0 #0000),
+      var(--tw-ring-shadow, 0 0 #0000),
+      0 0 0 1000px #fff inset;
+    -webkit-text-fill-color: hsl(var(--kitch-charcoal));
+    caret-color: hsl(var(--kitch-charcoal));
+  }
 }

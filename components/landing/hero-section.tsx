@@ -37,7 +37,13 @@ export function HeroSection() {
 
   const handleEmailSubmit = () => {
     startTransition(async () => {
-      const result = await joinAndroidWaitlist(email);
+      // The call itself can reject -- offline, or a page left open across a
+      // deploy so its action id no longer exists -- and an uncaught rejection
+      // here would replace the whole page with the error screen.
+      const result = await joinAndroidWaitlist(email).catch(() => ({
+        ok: false as const,
+        error: "Unable to submit. Please try again.",
+      }));
       if (!result.ok) {
         setWaitlistError(result.error);
         setWaitlistStatus("error");
@@ -151,7 +157,9 @@ export function HeroSection() {
                     Join waitlist for Android
                   </button>
                 </DialogTrigger>
-                <DialogContent>
+                {/* Portalled to <body>, outside <main>, so it needs its own
+                    light scheme -- see app/(landing)/page.tsx. */}
+                <DialogContent className="[color-scheme:light]">
                   <DialogHeader>
                     <DialogTitle>Join the Android waitlist</DialogTitle>
                     <DialogDescription>
@@ -174,7 +182,7 @@ export function HeroSection() {
                       value={email}
                       onChange={(event) => setEmail(event.target.value)}
                       placeholder="you@example.com"
-                      className="w-full rounded-2xl border border-kitch-charcoal/10 bg-white px-4 py-3 text-sm text-kitch-charcoal outline-none transition focus:border-kitch-orange-from focus:ring-2 focus:ring-kitch-orange-from/20"
+                      className="autofill-white w-full rounded-2xl border border-kitch-charcoal/10 bg-white px-4 py-3 text-sm text-kitch-charcoal outline-none transition focus:border-kitch-orange-from focus:ring-2 focus:ring-kitch-orange-from/20"
                     />
                     {waitlistStatus === "success" && (
                       <p className="text-sm text-emerald-600">Thanks! We&apos;ll let you know when Android is ready.</p>
