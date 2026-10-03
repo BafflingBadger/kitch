@@ -49,12 +49,13 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
 
-  // "/" has no page of its own -- it just routes people to wherever they should
-  // be. Deciding it here keeps app/page.tsx free of request data, which Cache
-  // Components would otherwise reject at prerender and fail the build.
-  if (request.nextUrl.pathname === "/") {
+  // "/" is the public landing page, but signed-in users go straight to the
+  // dashboard. Deciding it here keeps the landing page free of request data,
+  // which Cache Components would otherwise reject at prerender and fail the
+  // build.
+  if (request.nextUrl.pathname === "/" && user) {
     const url = request.nextUrl.clone();
-    url.pathname = user ? DEFAULT_AUTH_REDIRECT : "/auth/login";
+    url.pathname = DEFAULT_AUTH_REDIRECT;
     url.search = "";
     const redirectResponse = NextResponse.redirect(url);
     // Carry over any refreshed session cookies -- see the note at the bottom.

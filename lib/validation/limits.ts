@@ -21,6 +21,8 @@ export const LIMITS = {
   idList: 2_000,
   importImages: 20,
   importUrl: 2_000,
+  /** RFC 5321's limit on a forward path. */
+  email: 254,
 } as const;
 
 /** Whether `value` is an array of positive integer ids no longer than the cap. */

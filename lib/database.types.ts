@@ -723,6 +723,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      android_waitlist_join: { Args: { p_email: string }; Returns: undefined }
       assert_recent_auth: { Args: never; Returns: undefined }
       Cookbooks_Following_ReadAll: {
         Args: { p_user_id: string }

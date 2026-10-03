@@ -67,9 +67,11 @@ server sessions desync.
 
 ### Routes
 
-- `/` — no marketing page. The proxy redirects it to the dashboard or
-  `/auth/login`; [app/page.tsx](app/page.tsx) must stay free of request data, or
-  the Cache Components prerender fails the build.
+- `/` — the public landing page ([app/(landing)/page.tsx](app/(landing)/page.tsx),
+  sections in `components/landing/`). The proxy redirects signed-in users to the
+  dashboard; the page must stay free of request data, or the Cache Components
+  prerender fails the build. Its Android waitlist goes through
+  `android_waitlist_join()`, a security definer RPC open to `anon`.
 - `/auth/*` — login, sign-up, forgot/update password, callback + confirm route handlers, error page.
 - `/legal/*` — terms, privacy. Public.
 - `(dashboard)` group — authenticated app behind [app/(dashboard)/layout.tsx](app/(dashboard)/layout.tsx): `/cookbooks` (the home screen, labelled "Recipes"), `/recipes/[id]` and `/recipes/[id]/edit`, `/meal-prep`, `/grocery-list`, `/discover`, `/users/[id]`, `/settings`, `/premium`.
@@ -80,7 +82,7 @@ Nav items are defined in one place: `navItems` in
 ### UI conventions
 
 shadcn/ui (`new-york`, neutral base) — but `components/ui/` is a **thin** set:
-avatar, badge, button, card, checkbox, dialog, dropdown-menu, input, label,
+accordion, avatar, badge, button, card, checkbox, dialog, dropdown-menu, input, label,
 textarea. There is no `tabs`, `alert`, `table`, `select`, `tooltip`, `popover`,
 `sheet`, `switch`, `skeleton` or `toast`. Don't reach for one without installing
 it; the codebase uses `border-t border-kitch-charcoal/10` dividers and
