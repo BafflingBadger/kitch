@@ -50,7 +50,10 @@ export default function DashboardLayout({
       <Suspense fallback={<div className="w-72 shrink-0 bg-kitch-cream-dark" />}>
         <CookbookSidebar />
       </Suspense>
-      <div className="flex-1 overflow-y-auto">
+      {/* A column so the page area below the topbar has a definite height. A
+          page whose root has data-fill-screen (Meal Plan) gets exactly the
+          remaining screen and scrolls inside itself; others grow as usual. */}
+      <div className="flex flex-1 flex-col overflow-y-auto">
         <div className="flex items-center justify-between gap-4 px-8 py-4">
           {/* The topbar reads import quota and the profile reads the user row,
               so both suspend; reserve their size to keep the page from jumping
@@ -63,7 +66,7 @@ export default function DashboardLayout({
           </Suspense>
         </div>
         <div className="border-b border-kitch-charcoal/10" />
-        <div className="px-8 pb-8 pt-8">{children}</div>
+        <div className="flex-1 px-8 pb-8 pt-8 has-[>[data-fill-screen]]:min-h-0">{children}</div>
       </div>
     </div>
   );

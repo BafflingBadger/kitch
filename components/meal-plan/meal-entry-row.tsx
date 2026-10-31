@@ -7,9 +7,9 @@ import { X } from "lucide-react";
 import { CoverImage } from "@/components/cookbooks/cover-image";
 import { removeMealPlanEntry } from "@/app/(dashboard)/meal-prep/actions";
 import { MEAL_TYPE_META } from "@/lib/meal-plan/constants";
-import type { MealPlanEntryItem } from "@/components/meal-plan/week-grid";
+import type { MealPlanRecipeEntry } from "@/components/meal-plan/week-grid";
 
-export function MealEntryRow({ entry }: { entry: MealPlanEntryItem }) {
+export function MealEntryRow({ entry }: { entry: MealPlanRecipeEntry }) {
   const [isPending, startTransition] = useTransition();
   const meta = MEAL_TYPE_META[entry.type];
   const Icon = meta.icon;

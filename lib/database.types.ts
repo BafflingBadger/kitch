@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "12.2.3"
   }
   graphql_public: {
     Tables: {
@@ -296,6 +296,51 @@ export type Database = {
           },
         ]
       }
+      food_items: {
+        Row: {
+          calories: number
+          carbs_g: number
+          created_at: string
+          fat_g: number
+          id: number
+          is_favourite: boolean
+          last_used_at: string | null
+          name: string
+          protein_g: number
+          serving: string | null
+          use_count: number
+          user_id: string
+        }
+        Insert: {
+          calories: number
+          carbs_g: number
+          created_at?: string
+          fat_g: number
+          id?: never
+          is_favourite?: boolean
+          last_used_at?: string | null
+          name: string
+          protein_g: number
+          serving?: string | null
+          use_count?: number
+          user_id: string
+        }
+        Update: {
+          calories?: number
+          carbs_g?: number
+          created_at?: string
+          fat_g?: number
+          id?: never
+          is_favourite?: boolean
+          last_used_at?: string | null
+          name?: string
+          protein_g?: number
+          serving?: string | null
+          use_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       grocery_list: {
         Row: {
           checked: boolean
@@ -405,6 +450,77 @@ export type Database = {
             columns: ["recipe_id"]
             isOneToOne: false
             referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      macro_estimate_usage: {
+        Row: {
+          count: number
+          day: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          day: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          day?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mealplan_food_entries: {
+        Row: {
+          calories: number
+          carbs_g: number
+          created_at: string
+          date: string
+          fat_g: number
+          food_item_id: number | null
+          id: number
+          name: string
+          protein_g: number
+          serving: string | null
+          type: Database["public"]["Enums"]["Meal Plan Types"]
+          user_id: string
+        }
+        Insert: {
+          calories: number
+          carbs_g: number
+          created_at?: string
+          date: string
+          fat_g: number
+          food_item_id?: number | null
+          id?: never
+          name: string
+          protein_g: number
+          serving?: string | null
+          type: Database["public"]["Enums"]["Meal Plan Types"]
+          user_id: string
+        }
+        Update: {
+          calories?: number
+          carbs_g?: number
+          created_at?: string
+          date?: string
+          fat_g?: number
+          food_item_id?: number | null
+          id?: never
+          name?: string
+          protein_g?: number
+          serving?: string | null
+          type?: Database["public"]["Enums"]["Meal Plan Types"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mealplan_food_entries_food_item_id_fkey"
+            columns: ["food_item_id"]
+            isOneToOne: false
+            referencedRelation: "food_items"
             referencedColumns: ["id"]
           },
         ]
@@ -837,6 +953,21 @@ export type Database = {
         }[]
       }
       imports_record: { Args: never; Returns: number }
+      macro_estimates_consume: {
+        Args: never
+        Returns: {
+          allowed: boolean
+          remaining: number
+        }[]
+      }
+      meal_food_entries_add: {
+        Args: {
+          p_date: string
+          p_items: Json
+          p_type: Database["public"]["Enums"]["Meal Plan Types"]
+        }
+        Returns: number
+      }
       MealPlanRecipes_ReadAll: {
         Args: { p_end_date: string; p_start_date: string; p_user_id: string }
         Returns: {

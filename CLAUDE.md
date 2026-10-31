@@ -12,6 +12,7 @@ npm run db:types               # Regenerate lib/database.types.ts from the linke
 npm run functions:deploy       # Deploy the import-recipe edge function
 npm run functions:deploy:stripe # Deploy the stripe-webhook edge function
 npm run functions:deploy:transfer # Deploy the transfer-subscription edge function
+npm run functions:deploy:macros # Deploy the estimate-macros edge function
 ```
 
 There is no test suite. Verification is done by running the app and checking
@@ -74,7 +75,9 @@ server sessions desync.
   `android_waitlist_join()`, a security definer RPC open to `anon`.
 - `/auth/*` — login, sign-up, forgot/update password, callback + confirm route handlers, error page.
 - `/legal/*` — terms, privacy. Public.
-- `(dashboard)` group — authenticated app behind [app/(dashboard)/layout.tsx](app/(dashboard)/layout.tsx): `/cookbooks` (the home screen, labelled "Recipes"), `/recipes/[id]` and `/recipes/[id]/edit`, `/meal-prep`, `/grocery-list`, `/discover`, `/users/[id]`, `/settings`, `/premium`.
+- `(dashboard)` group — authenticated app behind [app/(dashboard)/layout.tsx](app/(dashboard)/layout.tsx): `/cookbooks` (the home screen, labelled "Recipes"), `/recipes/[id]` and `/recipes/[id]/edit`, `/meal-prep` (recipes plus Quick Add foods in `mealplan_food_entries`, with a
+  library in `food_items` for recents and favourites; the iOS-facing
+  `mealplan_recipe_mapping` stays recipe-only), `/grocery-list`, `/discover`, `/users/[id]`, `/settings`, `/premium`.
 
 Nav items are defined in one place: `navItems` in
 [components/cookbooks/cookbook-sidebar.tsx](components/cookbooks/cookbook-sidebar.tsx).
@@ -111,6 +114,7 @@ the web. Plans: `com.kitch.monthly`, `com.kitch.annual`, `com.kitch.family`
 | `subscriptions_stripe` | `stripe-webhook` (service role) |
 | `subscriptions_family` | `FamilyPlan_*` RPCs |
 | `import_usage` | `imports_record()` only |
+| `macro_estimate_usage` | `macro_estimates_consume()` only |
 
 None of these have client write policies — that is deliberate. A counter the
 user can `PATCH` is not a limit. (`public.users` grants `authenticated`
@@ -183,7 +187,9 @@ web and iOS.
 ## Edge functions
 
 **In the repo:** `import-recipe` (BrightData scrape → OpenAI → `Recipe_Write`),
-`stripe-webhook`, `transfer-subscription` (re-keys an Apple subscription to
+`stripe-webhook`, `estimate-macros` (Quick Add: text → per-food macros via
+OpenAI, 3 a day free / unlimited Premium, counted by
+`macro_estimates_consume()`), `transfer-subscription` (re-keys an Apple subscription to
 the caller's own account, and moves a Family plan's seats and pending invites
 with it via `family_transfer_owner()`).
 

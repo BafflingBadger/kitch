@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { Check, ChevronDown, ChevronLeft, Search, Star, X } from "lucide-react";
+import { BookOpen, Check, ChevronDown, ChevronLeft, Search, Sparkles, Star, X } from "lucide-react";
 
 import {
   Dialog,
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { DatePickerDropdown } from "@/components/meal-plan/date-picker-dropdown";
+import { QuickAddPanel } from "@/components/meal-plan/quick-add-panel";
 import { CoverImage } from "@/components/cookbooks/cover-image";
 import { sourceMeta } from "@/components/cookbooks/recipe-card";
 import {
@@ -62,7 +63,8 @@ type AddMealDialogProps = {
 export function AddMealDialog(props: AddMealDialogProps) {
   const { trigger, recipe } = props;
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState<"type" | "target">("type");
+  // Date mode: type → mode → (target | quick). Recipe mode: type → target.
+  const [step, setStep] = useState<"type" | "mode" | "target" | "quick">("type");
   const [loading, setLoading] = useState(false);
   const [recipes, setRecipes] = useState<RecipeOption[]>([]);
   const [cookbooks, setCookbooks] = useState<CookbookOption[]>([]);
@@ -148,6 +150,8 @@ export function AddMealDialog(props: AddMealDialogProps) {
       ? "All Recipes"
       : (cookbooks.find((c) => String(c.id) === selectedCookbookId)?.title ?? "All Recipes");
   const isRecipeGridStep = step === "target" && !recipe;
+  // Quick Add scrolls its own body so its Add button stays pinned at the bottom.
+  const isQuickStep = step === "quick";
 
   return (
     <Dialog
@@ -159,16 +163,28 @@ export function AddMealDialog(props: AddMealDialogProps) {
     >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent
+        showCloseButton={false}
         className={cn(
-          "p-0 sm:max-w-2xl",
-          isRecipeGridStep ? "flex h-[85vh] flex-col" : "max-h-[85vh] overflow-y-auto",
+          "p-0 sm:max-w-xl",
+          isRecipeGridStep
+            ? "flex h-[85vh] flex-col"
+            : isQuickStep
+              ? "flex max-h-[85vh] flex-col"
+              : "max-h-[85vh] overflow-y-auto",
         )}
       >
-        <DialogHeader className="shrink-0 gap-1 p-6 pb-0 text-left">
-          {step === "target" ? (
+        <DialogHeader
+          className={cn(
+            "shrink-0 gap-1 p-6 pb-0 text-left",
+            // The recipe grid's description sits in the body beside the search;
+            // pull the body up so it stays as close to the title as a header's.
+            isRecipeGridStep && "-mb-5",
+          )}
+        >
+          {step !== "type" ? (
             <button
               type="button"
-              onClick={() => setStep("type")}
+              onClick={() => setStep(step === "mode" || recipe ? "type" : "mode")}
               className="mb-1 flex w-fit items-center gap-1 text-sm font-medium text-kitch-grey transition-colors hover:text-kitch-charcoal"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -183,6 +199,20 @@ export function AddMealDialog(props: AddMealDialogProps) {
               </DialogTitle>
               <DialogDescription>What type of meal do you want to add?</DialogDescription>
             </>
+          ) : step === "mode" ? (
+            <>
+              <DialogTitle className="text-xl">Add {selectedType} for {dayShortLabel}</DialogTitle>
+              <DialogDescription>Pick a recipe, or quickly log what you ate.</DialogDescription>
+            </>
+          ) : step === "quick" ? (
+            <>
+              <DialogTitle className="text-xl">
+                Add {selectedType} for {dayShortLabel}
+              </DialogTitle>
+              <DialogDescription>
+                Describe what you ate and we&rsquo;ll estimate the calories and macros.
+              </DialogDescription>
+            </>
           ) : recipe ? (
             <>
               <DialogTitle className="text-xl">Choose a date</DialogTitle>
@@ -191,10 +221,8 @@ export function AddMealDialog(props: AddMealDialogProps) {
               </DialogDescription>
             </>
           ) : (
-            <>
-              <DialogTitle className="text-xl">Choose a recipe for {dayShortLabel}</DialogTitle>
-              <DialogDescription>Pick a recipe to add as {selectedType}.</DialogDescription>
-            </>
+            // Its description sits beside the search, in the body below.
+            <DialogTitle className="text-xl">Choose a recipe for {dayShortLabel}</DialogTitle>
           )}
         </DialogHeader>
 
@@ -202,6 +230,7 @@ export function AddMealDialog(props: AddMealDialogProps) {
           className={cn(
             "flex flex-col gap-4 px-6 pb-4 pt-2",
             isRecipeGridStep && "flex-1 overflow-hidden",
+            isQuickStep && "min-h-0 flex-1 overflow-hidden pb-6",
           )}
         >
           {step === "type" ? (
@@ -215,16 +244,43 @@ export function AddMealDialog(props: AddMealDialogProps) {
                     type="button"
                     onClick={() => {
                       setSelectedType(type);
-                      setStep("target");
+                      setStep(recipe ? "target" : "mode");
                     }}
                     className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-kitch-charcoal/10 bg-kitch-cream py-8 shadow-sm transition-colors hover:bg-kitch-cream-dark"
                   >
                     <Icon className="h-6 w-6 text-kitch-red" />
-                    <span className="text-sm font-medium text-kitch-charcoal">{meta.label}</span>
+                    <span className="text-sm font-semibold text-kitch-charcoal">{meta.label}</span>
                   </button>
                 );
               })}
             </div>
+          ) : step === "mode" ? (
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { next: "target" as const, label: "Select a recipe", icon: BookOpen },
+                { next: "quick" as const, label: "Quick add", icon: Sparkles },
+              ].map(({ next, label, icon: Icon }) => (
+                <button
+                  key={next}
+                  type="button"
+                  onClick={() => setStep(next)}
+                  className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-kitch-charcoal/10 bg-kitch-cream py-8 shadow-sm transition-colors hover:bg-kitch-cream-dark"
+                >
+                  <Icon className="h-6 w-6 text-kitch-red" />
+                  <span className="text-sm font-semibold text-kitch-charcoal">{label}</span>
+                </button>
+              ))}
+            </div>
+          ) : step === "quick" ? (
+            <QuickAddPanel
+              date={props.date!}
+              type={selectedType!}
+              onAdded={() => {
+                setOpen(false);
+                reset();
+              }}
+              onNavigate={() => setOpen(false)}
+            />
           ) : recipe ? (
             <>
               <div className="flex items-center gap-3 rounded-xl bg-kitch-cream-dark p-3">
@@ -241,6 +297,116 @@ export function AddMealDialog(props: AddMealDialogProps) {
             </>
           ) : (
             <>
+              {/* The search sits on the subheader's line, right above the sort toggle.
+                  Sharing the toggle's grid column, the open field grows to its width. */}
+              <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-3">
+                <DialogDescription className="self-start">Pick a recipe to add as {selectedType}.</DialogDescription>
+                <div className="hidden justify-end pt-1 sm:flex">
+                  <div
+                    className={cn(
+                      "flex h-9 items-center overflow-hidden rounded-full border border-kitch-charcoal/10 bg-kitch-cream transition-[width] duration-200",
+                      searchOpen ? "w-full" : "w-9",
+                    )}
+                  >
+                    {searchOpen ? (
+                      <>
+                        <Search className="ml-4 h-4 w-4 shrink-0 text-kitch-grey" />
+                        <input
+                          ref={searchInputRef}
+                          type="text"
+                          value={filterText}
+                          onChange={(event) => setFilterText(event.target.value)}
+                          placeholder="Search recipes…"
+                          className="w-0 min-w-0 flex-1 bg-transparent px-2 text-sm text-kitch-charcoal placeholder:text-kitch-grey focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFilterText("");
+                            setSearchOpen(false);
+                          }}
+                          aria-label="Close search"
+                          className="mr-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-kitch-grey transition-colors hover:bg-kitch-cream-dark hover:text-kitch-charcoal"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setSearchOpen(true)}
+                        aria-label="Search recipes"
+                        className="flex h-full w-full items-center justify-center text-kitch-grey transition-colors hover:bg-kitch-cream-dark"
+                      >
+                        <Search className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="hidden justify-self-start sm:block">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="flex h-11 w-[236px] shrink-0 items-center justify-between rounded-full border border-kitch-charcoal/15 bg-kitch-cream px-4 text-sm text-kitch-charcoal shadow-sm outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                      <span className="truncate">{selectedCookbookLabel}</span>
+                      <ChevronDown className="h-4 w-4 shrink-0 text-kitch-grey" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      className="w-[236px] rounded-xl border border-kitch-charcoal/10 bg-white p-1.5 text-kitch-charcoal shadow-lg"
+                    >
+                      <DropdownMenuItem
+                        onSelect={() => setSelectedCookbookId("all")}
+                        className={cn(
+                          "flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm focus:bg-kitch-cream-dark",
+                          selectedCookbookId === "all" && "bg-kitch-peach/60",
+                        )}
+                      >
+                        All Recipes
+                        {selectedCookbookId === "all" ? (
+                          <Check className="h-4 w-4 shrink-0 text-kitch-orange-to" />
+                        ) : null}
+                      </DropdownMenuItem>
+                      {cookbooks.map((cookbook) => {
+                        const value = String(cookbook.id);
+                        return (
+                          <DropdownMenuItem
+                            key={cookbook.id}
+                            onSelect={() => setSelectedCookbookId(value)}
+                            className={cn(
+                              "flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm focus:bg-kitch-cream-dark",
+                              selectedCookbookId === value && "bg-kitch-peach/60",
+                            )}
+                          >
+                            <span className="truncate">{cookbook.title}</span>
+                            {selectedCookbookId === value ? (
+                              <Check className="h-4 w-4 shrink-0 text-kitch-orange-to" />
+                            ) : null}
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <div className="hidden sm:block">
+                  <div className="inline-flex items-center rounded-full border border-kitch-charcoal/10 bg-kitch-cream p-1">
+                    {SORT_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setSortMode(option.value)}
+                        className={cn(
+                          "rounded-full border px-4 py-1.5 text-sm font-medium transition-colors",
+                          sortMode === option.value
+                            ? "border-kitch-charcoal/10 bg-white text-kitch-charcoal shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
+                            : "border-transparent text-kitch-grey hover:text-kitch-charcoal",
+                        )}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               <div className="flex h-9 items-center gap-2 rounded-full border border-kitch-charcoal/10 bg-kitch-cream px-4 sm:hidden">
                 <Search className="h-4 w-4 shrink-0 text-kitch-grey" />
                 <input
@@ -251,97 +417,6 @@ export function AddMealDialog(props: AddMealDialogProps) {
                   className="w-full bg-transparent text-sm text-kitch-charcoal placeholder:text-kitch-grey focus:outline-none"
                 />
               </div>
-
-              <div className="hidden items-center justify-end gap-3 sm:flex">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (searchOpen) setFilterText("");
-                    setSearchOpen((o) => !o);
-                  }}
-                  aria-label={searchOpen ? "Close search" : "Search recipes"}
-                  className={cn(
-                    "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-colors",
-                    searchOpen
-                      ? "border-kitch-charcoal/10 bg-kitch-cream-dark text-kitch-charcoal"
-                      : "border-kitch-charcoal/10 bg-kitch-cream text-kitch-grey hover:bg-kitch-cream-dark",
-                  )}
-                >
-                  {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
-                </button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger className="flex h-11 w-[236px] shrink-0 items-center justify-between rounded-full border border-kitch-charcoal/15 bg-kitch-cream px-4 text-sm text-kitch-charcoal shadow-sm outline-none focus-visible:ring-1 focus-visible:ring-ring">
-                    <span className="truncate">{selectedCookbookLabel}</span>
-                    <ChevronDown className="h-4 w-4 shrink-0 text-kitch-grey" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="start"
-                    className="w-[236px] rounded-xl border border-kitch-charcoal/10 bg-white p-1.5 text-kitch-charcoal shadow-lg"
-                  >
-                    <DropdownMenuItem
-                      onSelect={() => setSelectedCookbookId("all")}
-                      className={cn(
-                        "flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm focus:bg-kitch-cream-dark",
-                        selectedCookbookId === "all" && "bg-kitch-peach/60",
-                      )}
-                    >
-                      All Recipes
-                      {selectedCookbookId === "all" ? (
-                        <Check className="h-4 w-4 shrink-0 text-kitch-orange-to" />
-                      ) : null}
-                    </DropdownMenuItem>
-                    {cookbooks.map((cookbook) => {
-                      const value = String(cookbook.id);
-                      return (
-                        <DropdownMenuItem
-                          key={cookbook.id}
-                          onSelect={() => setSelectedCookbookId(value)}
-                          className={cn(
-                            "flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm focus:bg-kitch-cream-dark",
-                            selectedCookbookId === value && "bg-kitch-peach/60",
-                          )}
-                        >
-                          <span className="truncate">{cookbook.title}</span>
-                          {selectedCookbookId === value ? (
-                            <Check className="h-4 w-4 shrink-0 text-kitch-orange-to" />
-                          ) : null}
-                        </DropdownMenuItem>
-                      );
-                    })}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <div className="inline-flex shrink-0 items-center rounded-full border border-kitch-charcoal/10 bg-kitch-cream-dark p-1">
-                  {SORT_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => setSortMode(option.value)}
-                      className={cn(
-                        "rounded-full border px-4 py-1.5 text-sm font-medium transition-colors",
-                        sortMode === option.value
-                          ? "border-kitch-charcoal/10 bg-white text-kitch-charcoal shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
-                          : "border-transparent text-kitch-grey hover:text-kitch-charcoal",
-                      )}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {searchOpen ? (
-                <div className="hidden h-11 items-center gap-2 rounded-full border border-kitch-charcoal/10 bg-kitch-cream px-4 duration-200 animate-in slide-in-from-top-2 sm:flex">
-                  <Search className="h-4 w-4 shrink-0 text-kitch-grey" />
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    value={filterText}
-                    onChange={(event) => setFilterText(event.target.value)}
-                    placeholder="Search your recipes…"
-                    className="w-full bg-transparent text-sm text-kitch-charcoal placeholder:text-kitch-grey focus:outline-none"
-                  />
-                </div>
-              ) : null}
 
               <div className="flex-1 overflow-y-auto">
                 {loading ? (

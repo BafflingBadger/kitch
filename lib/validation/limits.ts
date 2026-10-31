@@ -21,6 +21,15 @@ export const LIMITS = {
   idList: 2_000,
   importImages: 20,
   importUrl: 2_000,
+  /** Quick Add: the free-text "what did you eat" description. */
+  foodDescription: 1_000,
+  foodName: 200,
+  foodServing: 100,
+  /** Foods logged to one meal at once. */
+  quickAddItems: 20,
+  /** Per food item. Match the check constraints on `food_items`. */
+  foodCalories: 10_000,
+  foodGrams: 1_000,
   /** RFC 5321's limit on a forward path. */
   email: 254,
 } as const;
