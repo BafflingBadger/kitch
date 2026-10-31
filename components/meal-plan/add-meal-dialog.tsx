@@ -279,7 +279,6 @@ export function AddMealDialog(props: AddMealDialogProps) {
                 setOpen(false);
                 reset();
               }}
-              onNavigate={() => setOpen(false)}
             />
           ) : recipe ? (
             <>

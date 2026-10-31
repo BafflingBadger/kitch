@@ -184,13 +184,11 @@ export async function listRecipesForMealPlan(cookbookId?: number) {
 /* ------------------------------------------------------------------ */
 
 /**
- * Why an estimate was refused, when the UI should act on it rather than print
- * it: `limit_reached` swaps the Estimate button for a Premium upsell.
+ * Shown when the free daily AI estimates are used up. Deliberately no Premium
+ * pitch: the edge function's own message has one, so it's replaced here.
  */
-export type EstimateFailureReason = "limit_reached";
-
-/** Free-tier AI estimates per day. The real limit lives in `macro_estimates_consume()`. */
-const FREE_DAILY_ESTIMATES = 3;
+const ESTIMATE_LIMIT_MESSAGE =
+  "You’ve used today’s AI estimates. You can still add foods from Favourites and Recent.";
 
 type FoodItemRow = {
   id: number;
@@ -258,10 +256,7 @@ function parseFoodItem(value: unknown): FoodMacros | null {
   };
 }
 
-/**
- * The caller's favourites and recent foods, plus how many AI estimates they
- * have left today (null for Premium).
- */
+/** The caller's favourite and recent foods. */
 export async function listFoodSuggestions() {
   const supabase = await createClient();
   const { data: claimsData, error: authError } = await supabase.auth.getClaims();
@@ -269,10 +264,9 @@ export async function listFoodSuggestions() {
     return { ok: false as const, error: "Not authenticated" };
   }
   const userId = claimsData.claims.sub;
-  const today = new Date().toISOString().slice(0, 10);
   const columns = "id, name, serving, calories, protein_g, fat_g, carbs_g, is_favourite";
 
-  const [favouritesResult, recentResult, premiumResult, usageResult] = await Promise.all([
+  const [favouritesResult, recentResult] = await Promise.all([
     supabase
       .from("food_items")
       .select(columns)
@@ -286,13 +280,6 @@ export async function listFoodSuggestions() {
       .not("last_used_at", "is", null)
       .order("last_used_at", { ascending: false })
       .limit(15),
-    supabase.rpc("has_active_premium"),
-    supabase
-      .from("macro_estimate_usage")
-      .select("count")
-      .eq("user_id", userId)
-      .eq("day", today)
-      .maybeSingle(),
   ]);
 
   if (favouritesResult.error || recentResult.error) {
@@ -308,13 +295,7 @@ export async function listFoodSuggestions() {
     .map(toFoodSuggestion)
     .filter((item) => !favouriteIds.has(item.id));
 
-  // Display only; the edge function is the gate. Treat a failed premium check
-  // as free so the hint errs towards showing a count.
-  const estimatesRemaining = premiumResult.data
-    ? null
-    : Math.max(FREE_DAILY_ESTIMATES - (usageResult.data?.count ?? 0), 0);
-
-  return { ok: true as const, favourites, recent, estimatesRemaining };
+  return { ok: true as const, favourites, recent };
 }
 
 export async function estimateMacros(description: string) {
@@ -338,17 +319,16 @@ export async function estimateMacros(description: string) {
 
   if (error) {
     let message = "Could not estimate macros";
-    let reason: EstimateFailureReason | undefined;
     if (error.context && typeof error.context.json === "function") {
       try {
         const errorBody = await error.context.json();
         if (errorBody?.error) message = errorBody.error;
-        if (errorBody?.code === "macro_estimate_limit_reached") reason = "limit_reached";
+        if (errorBody?.code === "macro_estimate_limit_reached") message = ESTIMATE_LIMIT_MESSAGE;
       } catch {
         // response body wasn't JSON; fall back to the generic message
       }
     }
-    return { ok: false as const, error: message, reason };
+    return { ok: false as const, error: message };
   }
 
   const rawItems: unknown[] = Array.isArray(data?.items) ? data.items : [];
@@ -370,8 +350,7 @@ export async function estimateMacros(description: string) {
     return { ok: false as const, error: "Couldn't find any food in that description" };
   }
 
-  const remaining = typeof data?.remaining === "number" ? data.remaining : null;
-  return { ok: true as const, items, estimatesRemaining: remaining };
+  return { ok: true as const, items };
 }
 
 export async function addFoodEntries(date: string, type: MealPlanType, items: unknown) {

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import Link from "next/link";
 import { History, Plus, Sparkles, Star, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -83,18 +82,15 @@ export function QuickAddPanel({
   date,
   type,
   onAdded,
-  onNavigate,
 }: {
   date: string;
   type: MealPlanType;
   onAdded: () => void;
-  onNavigate: () => void;
 }) {
   const [description, setDescription] = useState("");
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [favourites, setFavourites] = useState<FoodSuggestion[]>([]);
   const [recent, setRecent] = useState<FoodSuggestion[]>([]);
-  const [limitReached, setLimitReached] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEstimating, startEstimating] = useTransition();
   const [isSaving, startSaving] = useTransition();
@@ -105,7 +101,6 @@ export function QuickAddPanel({
       if (cancelled || !result.ok) return;
       setFavourites(result.favourites);
       setRecent(result.recent);
-      setLimitReached(result.estimatesRemaining === 0);
     });
     return () => {
       cancelled = true;
@@ -121,8 +116,6 @@ export function QuickAddPanel({
       if (result.ok) {
         setItems((current) => [...current, ...result.items.map((item) => toReviewItem(item, library))]);
         setDescription("");
-      } else if (result.reason === "limit_reached") {
-        setLimitReached(true);
       } else {
         setError(result.error);
       }
@@ -191,52 +184,32 @@ export function QuickAddPanel({
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Padding (offset by the negative margin) keeps focus rings from being clipped by the scroll area. */}
       <div className="-m-1 flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-1">
-        {limitReached ? (
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-kitch-charcoal/10 bg-kitch-peach/40 px-6 py-6 text-center">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-kitch-orange-from to-kitch-orange-to text-white">
-              <Sparkles className="h-5 w-5" />
+        <div className="flex flex-col gap-2">
+          <textarea
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            maxLength={LIMITS.foodDescription}
+            rows={3}
+            placeholder="e.g. 2 scrambled eggs, a slice of toast with butter and a medium vanilla latte"
+            className="w-full resize-none rounded-2xl border border-kitch-charcoal/10 bg-kitch-cream px-4 py-3 text-sm text-kitch-charcoal placeholder:text-kitch-grey focus:border-kitch-red/30 focus:outline-none focus:ring-[3px] focus:ring-kitch-red/15"
+          />
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs text-kitch-grey">
+              Describe it naturally. Provide more detail for more accurate results.
             </span>
-            <span className="font-literata text-base font-semibold text-kitch-charcoal">
-              You&rsquo;ve used today&rsquo;s free AI estimates
-            </span>
-            <span className="max-w-xs text-xs text-kitch-grey">
-              You can still add foods you&rsquo;ve logged before. Kitch Premium gives you
-              unlimited Quick Add.
-            </span>
-            <Link
-              href="/premium"
-              onClick={onNavigate}
-              className="flex h-10 items-center rounded-full bg-gradient-to-r from-kitch-orange-from to-kitch-orange-to px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90"
+            <Button
+              type="button"
+              onClick={estimate}
+              disabled={isEstimating || !description.trim()}
+              className="rounded-full bg-gradient-to-r from-kitch-orange-from to-kitch-orange-to text-white shadow-sm hover:opacity-90"
             >
-              See plans
-            </Link>
+              <Sparkles className="h-4 w-4" />
+              {isEstimating ? "Estimating…" : "Estimate"}
+            </Button>
           </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            <textarea
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              maxLength={LIMITS.foodDescription}
-              rows={3}
-              placeholder="e.g. 2 scrambled eggs, a slice of toast with butter and a medium vanilla latte"
-              className="w-full resize-none rounded-2xl border border-kitch-charcoal/10 bg-kitch-cream px-4 py-3 text-sm text-kitch-charcoal placeholder:text-kitch-grey focus:border-kitch-red/30 focus:outline-none focus:ring-[3px] focus:ring-kitch-red/15"
-            />
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-xs text-kitch-grey">
-                Describe it naturally. Provide more detail for more accurate results.
-              </span>
-              <Button
-                type="button"
-                onClick={estimate}
-                disabled={isEstimating || !description.trim()}
-                className="rounded-full bg-gradient-to-r from-kitch-orange-from to-kitch-orange-to text-white shadow-sm hover:opacity-90"
-              >
-                <Sparkles className="h-4 w-4" />
-                {isEstimating ? "Estimating…" : "Estimate"}
-              </Button>
-            </div>
-          </div>
-        )}
+          {/* Up top so it's in view without scrolling past the suggestions. */}
+          {error ? <p className="text-sm text-kitch-red">{error}</p> : null}
+        </div>
 
         {items.length > 0 ? (
           <div className="flex flex-col gap-3">
@@ -372,7 +345,6 @@ export function QuickAddPanel({
           </div>
         ) : null}
 
-        {error ? <p className="text-sm text-kitch-red">{error}</p> : null}
       </div>
 
       <div className="flex shrink-0 justify-end pt-4">
