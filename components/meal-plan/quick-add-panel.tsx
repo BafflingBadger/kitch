@@ -19,6 +19,7 @@ import {
   type FoodSuggestion,
 } from "@/lib/meal-plan/macros";
 import { LIMITS } from "@/lib/validation/limits";
+import { MacroInputs, parseMacroInput } from "@/components/meal-plan/macro-inputs";
 import { cn } from "@/lib/utils";
 
 /** A row in the review list. Numbers are kept as strings while being edited. */
@@ -34,13 +35,6 @@ interface ReviewItem {
   fatG: string;
   carbsG: string;
 }
-
-const MACRO_FIELDS = [
-  { field: "calories", label: "Cal", unit: "kcal" },
-  { field: "proteinG", label: "Protein", unit: "g" },
-  { field: "fatG", label: "Fat", unit: "g" },
-  { field: "carbsG", label: "Carbs", unit: "g" },
-] as const;
 
 let nextKey = 1;
 
@@ -60,19 +54,14 @@ function toReviewItem(item: FoodMacros, library: FoodSuggestion[]): ReviewItem {
   };
 }
 
-function toNumber(value: string) {
-  const n = Number(value);
-  return Number.isFinite(n) && value.trim() !== "" ? n : 0;
-}
-
 function fromReviewItem(item: ReviewItem): FoodMacros {
   return {
     name: item.name.trim(),
     serving: item.serving.trim() || null,
-    calories: toNumber(item.calories),
-    proteinG: toNumber(item.proteinG),
-    fatG: toNumber(item.fatG),
-    carbsG: toNumber(item.carbsG),
+    calories: parseMacroInput(item.calories),
+    proteinG: parseMacroInput(item.proteinG),
+    fatG: parseMacroInput(item.fatG),
+    carbsG: parseMacroInput(item.carbsG),
   };
 }
 
@@ -277,28 +266,10 @@ export function QuickAddPanel({
                     <X className="h-4 w-4" />
                   </button>
                 </div>
-                <div className="grid grid-cols-4 gap-2">
-                  {MACRO_FIELDS.map(({ field, label, unit }) => (
-                    <label key={field} className="flex min-w-0 flex-col gap-1">
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-kitch-grey">
-                        {label}
-                      </span>
-                      <span className="flex h-9 items-center rounded-lg border border-kitch-charcoal/10 bg-white pr-2.5 focus-within:ring-1 focus-within:ring-ring">
-                        <input
-                          type="number"
-                          inputMode="decimal"
-                          min={0}
-                          max={field === "calories" ? LIMITS.foodCalories : LIMITS.foodGrams}
-                          step={field === "calories" ? 1 : 0.1}
-                          value={item[field]}
-                          onChange={(event) => updateItem(item.key, { [field]: event.target.value })}
-                          className="h-full w-full min-w-0 bg-transparent pl-2.5 text-sm font-semibold text-kitch-charcoal [appearance:textfield] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                        />
-                        <span className="shrink-0 text-[10px] text-kitch-grey">{unit}</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
+                <MacroInputs
+                  values={item}
+                  onChange={(field, value) => updateItem(item.key, { [field]: value })}
+                />
               </div>
             ))}
           </div>

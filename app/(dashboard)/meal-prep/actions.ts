@@ -447,6 +447,56 @@ export async function setFoodFavourite(foodItemId: number, isFavourite: boolean)
   return { ok: true as const };
 }
 
+/**
+ * Edit one food on the calendar. Only that day's entry changes: entries are
+ * snapshots, so the food library (and other days) keep their own numbers.
+ */
+export async function updateFoodEntry(entryId: number, type: MealPlanType, item: unknown) {
+  if (!Number.isInteger(entryId) || entryId <= 0) {
+    return { ok: false as const, error: "Invalid entry id" };
+  }
+  if (!MEAL_TYPES.includes(type)) {
+    return { ok: false as const, error: "Invalid meal type" };
+  }
+  const parsed = parseFoodItem(item);
+  if (!parsed) {
+    return { ok: false as const, error: "Check the food has a name and sensible numbers" };
+  }
+
+  const supabase = await createClient();
+  const { data: claimsData, error: authError } = await supabase.auth.getClaims();
+  if (authError || !claimsData?.claims) {
+    return { ok: false as const, error: "Not authenticated" };
+  }
+  const userId = claimsData.claims.sub;
+
+  const { data, error } = await supabase
+    .from("mealplan_food_entries")
+    .update({
+      type,
+      name: parsed.name,
+      serving: parsed.serving,
+      calories: parsed.calories,
+      protein_g: parsed.proteinG,
+      fat_g: parsed.fatG,
+      carbs_g: parsed.carbsG,
+    })
+    .eq("id", entryId)
+    .eq("user_id", userId)
+    .select("id");
+
+  if (error) {
+    return { ok: false as const, error: error.message };
+  }
+  if (!data || data.length === 0) {
+    return { ok: false as const, error: "That food is no longer on your plan" };
+  }
+
+  revalidatePath("/meal-prep");
+
+  return { ok: true as const };
+}
+
 export async function removeFoodEntry(entryId: number) {
   if (!Number.isInteger(entryId) || entryId <= 0) {
     return { ok: false as const, error: "Invalid entry id" };
