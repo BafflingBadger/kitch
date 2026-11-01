@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, LogOut, Settings } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -23,20 +23,16 @@ export function ProfileMenu({
 }) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex shrink-0 items-center gap-3 rounded-2xl border border-kitch-charcoal/15 bg-white py-1.5 pl-2 pr-3 text-left shadow-[0_1px_2px_rgba(0,0,0,0.06)] outline-none">
-        <Avatar
-          displayName={displayName}
-          avatarUrl={avatarUrl}
-          sizeClassName="h-9 w-9"
-          className="rounded-xl"
-        />
-        <div className="min-w-0">
+      {/* Just the photo at rest; hovering (or opening the menu) slides the name
+          and plan out to its left on a white pill. */}
+      <DropdownMenuTrigger className="group flex shrink-0 items-center rounded-full border border-transparent p-1 text-right outline-none transition-colors hover:border-kitch-charcoal/10 hover:bg-white hover:shadow-sm focus-visible:border-kitch-charcoal/10 focus-visible:bg-white data-[state=open]:border-kitch-charcoal/10 data-[state=open]:bg-white data-[state=open]:shadow-sm">
+        <div className="min-w-0 max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-200 group-hover:max-w-48 group-hover:px-3 group-hover:opacity-100 group-focus-visible:max-w-48 group-focus-visible:px-3 group-focus-visible:opacity-100 group-data-[state=open]:max-w-48 group-data-[state=open]:px-3 group-data-[state=open]:opacity-100">
           <p className="max-w-40 truncate text-sm font-semibold text-kitch-charcoal">
             {displayName}
           </p>
           <p className="text-xs text-kitch-grey">{planLabel}</p>
         </div>
-        <ChevronDown className="ml-2 h-4 w-4 text-kitch-grey" />
+        <Avatar displayName={displayName} avatarUrl={avatarUrl} sizeClassName="h-10 w-10" />
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
