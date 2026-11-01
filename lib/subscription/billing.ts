@@ -36,10 +36,14 @@ export async function fetchBillingDetails(): Promise<BillingDetails> {
   const { data: claimsData } = await supabase.auth.getClaims();
   if (!claimsData?.claims) return EMPTY;
 
+  // Only the statuses has_active_premium() counts: billing details show in the
+  // Premium state alone. A canceled subscription has nothing to show, and
+  // Stripe may no longer have it at all, which would only log a failed lookup.
   const { data: row } = await supabase
     .from("subscriptions_stripe")
     .select("stripe_subscription_id")
     .eq("user_id", claimsData.claims.sub)
+    .in("status", ["active", "trialing"])
     .maybeSingle();
 
   if (!row?.stripe_subscription_id) return EMPTY;
