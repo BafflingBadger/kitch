@@ -13,7 +13,8 @@ import {
   toISODate,
 } from "@/lib/meal-plan/date-utils";
 import { MEAL_TYPES, type MealPlanType } from "@/lib/meal-plan/constants";
-import { sumMacros } from "@/lib/meal-plan/macros";
+import { scaleMacros, sumMacros } from "@/lib/meal-plan/macros";
+import { getEntitlement } from "@/lib/subscription/entitlement";
 import { WeekNavigator } from "@/components/meal-plan/week-navigator";
 import { WeekGrid, type MealPlanDay, type MealPlanEntryItem } from "@/components/meal-plan/week-grid";
 
@@ -27,7 +28,16 @@ type MealPlanRow = {
   date: string;
   type: MealPlanType;
   recipe_id: number;
-  recipes: { id: number; name: string; thumbnail: string | null } | null;
+  servings: number;
+  recipes: {
+    id: number;
+    name: string;
+    thumbnail: string | null;
+    calories: number;
+    protein_g: number;
+    fat_g: number;
+    carbs_g: number;
+  } | null;
 };
 
 /** Breakfast, lunch, dinner, snack; then oldest first within a meal. */
@@ -62,10 +72,12 @@ async function MealPrepContent({
   const endDateStr = toISODate(weekDates[6]);
   const today = new Date();
 
-  const [{ data: rows }, { data: foodRows }] = await Promise.all([
+  const [{ data: rows }, { data: foodRows }, entitlement] = await Promise.all([
     supabase
       .from("mealplan_recipe_mapping")
-      .select("id, date, type, recipe_id, created_at, recipes(id, name, thumbnail)")
+      .select(
+        "id, date, type, recipe_id, servings, created_at, recipes(id, name, thumbnail, calories, protein_g, fat_g, carbs_g)",
+      )
       .eq("user_id", userId)
       .gte("date", startDateStr)
       .lte("date", endDateStr),
@@ -75,6 +87,7 @@ async function MealPrepContent({
       .eq("user_id", userId)
       .gte("date", startDateStr)
       .lte("date", endDateStr),
+    getEntitlement(),
   ]);
 
   const entriesByDate = new Map<string, { entry: MealPlanEntryItem; createdAt: string }[]>();
@@ -94,6 +107,13 @@ async function MealPrepContent({
         recipeName: row.recipes.name,
         imageUrl: recipeThumbnailUrl(row.recipes.thumbnail),
         type: row.type,
+        servings: Number(row.servings),
+        perServing: {
+          calories: row.recipes.calories,
+          proteinG: Number(row.recipes.protein_g),
+          fatG: Number(row.recipes.fat_g),
+          carbsG: Number(row.recipes.carbs_g),
+        },
       },
       row.created_at,
     );
@@ -120,7 +140,9 @@ async function MealPrepContent({
     const dateStr = toISODate(date);
     const { weekday, day, month } = formatDayHeader(date);
     const entries = (entriesByDate.get(dateStr) ?? []).sort(compareEntries).map((e) => e.entry);
-    const foods = entries.filter((entry) => entry.kind === "food");
+    const macros = entries.map((entry) =>
+      entry.kind === "food" ? entry : scaleMacros(entry.perServing, entry.servings),
+    );
     return {
       dateStr,
       weekday,
@@ -128,7 +150,7 @@ async function MealPrepContent({
       monthLabel: month,
       isToday: isSameLocalDate(date, today),
       entries,
-      totals: sumMacros(foods),
+      totals: sumMacros(macros),
     };
   });
 
@@ -153,7 +175,7 @@ async function MealPrepContent({
         />
       </div>
       <div className="mt-6 min-h-0 flex-1">
-        <WeekGrid days={days} />
+        <WeekGrid days={days} isPremium={entitlement.isPremium} />
       </div>
     </div>
   );

@@ -300,6 +300,7 @@ export type Database = {
         Row: {
           calories: number
           carbs_g: number
+          confidence: number | null
           created_at: string
           fat_g: number
           id: number
@@ -314,6 +315,7 @@ export type Database = {
         Insert: {
           calories: number
           carbs_g: number
+          confidence?: number | null
           created_at?: string
           fat_g: number
           id?: never
@@ -328,6 +330,7 @@ export type Database = {
         Update: {
           calories?: number
           carbs_g?: number
+          confidence?: number | null
           created_at?: string
           fat_g?: number
           id?: never
@@ -413,6 +416,24 @@ export type Database = {
         }
         Relationships: []
       }
+      import_usage_monthly: {
+        Row: {
+          count: number
+          month: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          month: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          month?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ingredients: {
         Row: {
           created_at: string
@@ -476,6 +497,7 @@ export type Database = {
         Row: {
           calories: number
           carbs_g: number
+          confidence: number | null
           created_at: string
           date: string
           fat_g: number
@@ -490,6 +512,7 @@ export type Database = {
         Insert: {
           calories: number
           carbs_g: number
+          confidence?: number | null
           created_at?: string
           date: string
           fat_g: number
@@ -504,6 +527,7 @@ export type Database = {
         Update: {
           calories?: number
           carbs_g?: number
+          confidence?: number | null
           created_at?: string
           date?: string
           fat_g?: number
@@ -531,6 +555,7 @@ export type Database = {
           date: string
           id: number
           recipe_id: number
+          servings: number
           type: Database["public"]["Enums"]["Meal Plan Types"]
           user_id: string
         }
@@ -539,6 +564,7 @@ export type Database = {
           date: string
           id?: number
           recipe_id: number
+          servings?: number
           type: Database["public"]["Enums"]["Meal Plan Types"]
           user_id: string
         }
@@ -547,6 +573,7 @@ export type Database = {
           date?: string
           id?: number
           recipe_id?: number
+          servings?: number
           type?: Database["public"]["Enums"]["Meal Plan Types"]
           user_id?: string
         }
@@ -559,6 +586,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      recipe_macro_usage: {
+        Row: {
+          count: number
+          day: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          day: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          day?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       recipe_source_images: {
         Row: {
@@ -591,39 +636,57 @@ export type Database = {
       }
       recipes: {
         Row: {
+          calories: number
+          carbs_g: number
           created_at: string
+          fat_g: number
           id: number
+          macros_confidence: number | null
           name: string
           notes: string | null
+          protein_g: number
           rating: number | null
           request: string | null
           response: string | null
+          servings: number
           source_text: string
           source_url: string | null
           thumbnail: string | null
           user_id: string
         }
         Insert: {
+          calories?: number
+          carbs_g?: number
           created_at?: string
+          fat_g?: number
           id?: number
+          macros_confidence?: number | null
           name: string
           notes?: string | null
+          protein_g?: number
           rating?: number | null
           request?: string | null
           response?: string | null
+          servings?: number
           source_text?: string
           source_url?: string | null
           thumbnail?: string | null
           user_id: string
         }
         Update: {
+          calories?: number
+          carbs_g?: number
           created_at?: string
+          fat_g?: number
           id?: number
+          macros_confidence?: number | null
           name?: string
           notes?: string | null
+          protein_g?: number
           rating?: number | null
           request?: string | null
           response?: string | null
+          servings?: number
           source_text?: string
           source_url?: string | null
           thumbnail?: string | null
@@ -944,6 +1007,7 @@ export type Database = {
         Args: { p_owner_id: string; p_user_id: string }
         Returns: undefined
       }
+      imports_consume_monthly: { Args: never; Returns: boolean }
       imports_get_usage: {
         Args: never
         Returns: {
@@ -975,6 +1039,7 @@ export type Database = {
           date: string
           id: number
           recipe_id: number
+          servings: number
           type: Database["public"]["Enums"]["Meal Plan Types"]
           user_id: string
         }[]
@@ -984,6 +1049,13 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      recipe_macro_estimates_consume: {
+        Args: never
+        Returns: {
+          allowed: boolean
+          reason: string
+        }[]
       }
       Recipe_Write: {
         Args: {

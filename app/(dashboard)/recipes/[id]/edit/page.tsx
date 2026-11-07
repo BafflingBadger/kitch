@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 import { EditRecipeForm } from "@/components/recipes/edit/edit-recipe-form";
+import { getEntitlement } from "@/lib/subscription/entitlement";
 
 async function EditRecipeContent({
   params,
@@ -23,14 +24,14 @@ async function EditRecipeContent({
 
   const { data: recipe } = await supabase
     .from("recipes")
-    .select("id, name, thumbnail, notes, rating")
+    .select("id, name, thumbnail, notes, rating, servings, calories, protein_g, fat_g, carbs_g, macros_confidence")
     .eq("id", numericId)
     .eq("user_id", userId)
     .maybeSingle();
 
   if (!recipe) notFound();
 
-  const [{ data: ingredientRows }, { data: directionRows }] = await Promise.all([
+  const [{ data: ingredientRows }, { data: directionRows }, entitlement] = await Promise.all([
     supabase
       .from("ingredients")
       .select("id, desc, order, is_heading")
@@ -41,6 +42,7 @@ async function EditRecipeContent({
       .select("id, desc, order, is_heading")
       .eq("recipe_id", numericId)
       .order("order", { ascending: true }),
+    getEntitlement(),
   ]);
 
   return (
@@ -62,6 +64,15 @@ async function EditRecipeContent({
         desc: row.desc,
         is_heading: row.is_heading ?? false,
       }))}
+      initialMacros={{
+        servings: Number(recipe.servings),
+        calories: recipe.calories,
+        proteinG: Number(recipe.protein_g),
+        fatG: Number(recipe.fat_g),
+        carbsG: Number(recipe.carbs_g),
+        confidence: recipe.macros_confidence,
+      }}
+      isPremium={entitlement.isPremium}
       backHref={backHref ?? "/cookbooks"}
       backLabel={backLabel ?? "Cookbooks"}
     />

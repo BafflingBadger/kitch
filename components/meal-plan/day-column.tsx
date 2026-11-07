@@ -6,7 +6,7 @@ import { AddMealDialog } from "@/components/meal-plan/add-meal-dialog";
 import type { MealPlanDay } from "@/components/meal-plan/week-grid";
 import { cn } from "@/lib/utils";
 
-export function DayColumn({ day }: { day: MealPlanDay }) {
+export function DayColumn({ day, isPremium }: { day: MealPlanDay; isPremium: boolean }) {
   return (
     <div
       className={cn(
@@ -65,6 +65,7 @@ export function DayColumn({ day }: { day: MealPlanDay }) {
 
       <AddMealDialog
         date={day.dateStr}
+        isPremium={isPremium}
         trigger={
           <button
             type="button"

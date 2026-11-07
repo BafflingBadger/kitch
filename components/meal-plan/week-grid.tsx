@@ -9,6 +9,10 @@ export interface MealPlanRecipeEntry {
   recipeName: string;
   imageUrl: string | null;
   type: MealPlanType;
+  /** Servings eaten. */
+  servings: number;
+  /** The recipe's current per-serving macros, read live (not a snapshot). */
+  perServing: MacroTotals;
 }
 
 /** A food logged through Quick Add. Ids are from a different table than recipe entries. */
@@ -27,15 +31,15 @@ export interface MealPlanDay {
   monthLabel: string;
   isToday: boolean;
   entries: MealPlanEntryItem[];
-  /** From Quick Add foods only; recipes don't carry macros yet. */
+  /** Quick Add foods plus recipes (per-serving macros × servings eaten). */
   totals: MacroTotals;
 }
 
-export function WeekGrid({ days }: { days: MealPlanDay[] }) {
+export function WeekGrid({ days, isPremium }: { days: MealPlanDay[]; isPremium: boolean }) {
   return (
     <div className="flex h-full gap-4 overflow-x-auto pb-2">
       {days.map((day) => (
-        <DayColumn key={day.dateStr} day={day} />
+        <DayColumn key={day.dateStr} day={day} isPremium={isPremium} />
       ))}
     </div>
   );

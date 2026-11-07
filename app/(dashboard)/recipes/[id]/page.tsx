@@ -9,6 +9,7 @@ import { RecipeActionButtons } from "@/components/recipes/recipe-action-buttons"
 import { RecipeIngredients } from "@/components/recipes/recipe-ingredients";
 import { RecipeDirections } from "@/components/recipes/recipe-directions";
 import { RecipeNotes } from "@/components/recipes/recipe-notes";
+import { RecipeNutrition } from "@/components/recipes/recipe-nutrition";
 
 function recipeThumbnailUrl(path: string | null | undefined) {
   if (!path) return null;
@@ -37,7 +38,9 @@ async function RecipeDetailContent({
 
   const { data: recipe } = await supabase
     .from("recipes")
-    .select("id, name, thumbnail, notes, rating, source_text, created_at")
+    .select(
+      "id, name, thumbnail, notes, rating, source_text, created_at, servings, calories, protein_g, fat_g, carbs_g",
+    )
     .eq("id", numericId)
     .eq("user_id", contentUserId)
     .maybeSingle();
@@ -108,6 +111,17 @@ async function RecipeDetailContent({
               recipeName={recipe.name}
               imageUrl={imageUrl}
               ingredients={ingredientRows ?? []}
+            />
+          </div>
+          <div className="mt-5">
+            <RecipeNutrition
+              nutrition={{
+                servings: Number(recipe.servings),
+                calories: recipe.calories,
+                protein: Number(recipe.protein_g),
+                fat: Number(recipe.fat_g),
+                carbs: Number(recipe.carbs_g),
+              }}
             />
           </div>
         </div>

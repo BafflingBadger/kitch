@@ -34,6 +34,8 @@ interface ReviewItem {
   proteinG: string;
   fatG: string;
   carbsG: string;
+  /** The AI's score out of 10 (recorded, not shown); cleared once the row is edited. */
+  confidence: number | null;
 }
 
 let nextKey = 1;
@@ -51,6 +53,7 @@ function toReviewItem(item: FoodMacros, library: FoodSuggestion[]): ReviewItem {
     proteinG: String(item.proteinG),
     fatG: String(item.fatG),
     carbsG: String(item.carbsG),
+    confidence: item.confidence ?? null,
   };
 }
 
@@ -62,6 +65,7 @@ function fromReviewItem(item: ReviewItem): FoodMacros {
     proteinG: parseMacroInput(item.proteinG),
     fatG: parseMacroInput(item.fatG),
     carbsG: parseMacroInput(item.carbsG),
+    confidence: item.confidence,
   };
 }
 
@@ -141,8 +145,11 @@ export function QuickAddPanel({
     });
   };
 
+  // Any edit means the numbers are no longer purely the AI's, so drop its score.
   const updateItem = (key: number, patch: Partial<ReviewItem>) => {
-    setItems((current) => current.map((item) => (item.key === key ? { ...item, ...patch } : item)));
+    setItems((current) =>
+      current.map((item) => (item.key === key ? { ...item, ...patch, confidence: null } : item)),
+    );
   };
 
   const removeItem = (key: number) => {

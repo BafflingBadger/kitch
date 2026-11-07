@@ -30,6 +30,10 @@ export const LIMITS = {
   /** Per food item. Match the check constraints on `food_items`. */
   foodCalories: 10_000,
   foodGrams: 1_000,
+  /** Servings a recipe makes. Matches the check on `recipes.servings`. */
+  recipeServings: 100,
+  /** Servings eaten of a meal-plan recipe. Matches `mealplan_recipe_mapping.servings`. */
+  mealPlanServings: 20,
   /** RFC 5321's limit on a forward path. */
   email: 254,
 } as const;

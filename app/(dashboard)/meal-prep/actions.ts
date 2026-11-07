@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { MEAL_TYPES, type MealPlanType } from "@/lib/meal-plan/constants";
 import type { FoodMacros, FoodSuggestion } from "@/lib/meal-plan/macros";
+import { getEntitlement } from "@/lib/subscription/entitlement";
 import { LIMITS } from "@/lib/validation/limits";
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -14,7 +15,29 @@ function recipeThumbnailUrl(path: string | null | undefined) {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/recipes/${path}`;
 }
 
-export async function addMealPlanEntry(recipeId: number, date: string, type: MealPlanType) {
+function isValidServings(value: unknown): value is number {
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    value > 0 &&
+    value <= LIMITS.mealPlanServings
+  );
+}
+
+/** Two decimals, to fit `mealplan_recipe_mapping.servings numeric(4, 2)`. */
+function roundServings(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
+export async function addMealPlanEntry(
+  recipeId: number,
+  date: string,
+  type: MealPlanType,
+  servings: number = 1,
+) {
+  if (!isValidServings(servings) || roundServings(servings) <= 0) {
+    return { ok: false as const, error: "Choose between 0.5 and 20 servings" };
+  }
   if (!Number.isInteger(recipeId) || recipeId <= 0) {
     return { ok: false as const, error: "Invalid recipe id" };
   }
@@ -44,7 +67,7 @@ export async function addMealPlanEntry(recipeId: number, date: string, type: Mea
 
   const { error } = await supabase
     .from("mealplan_recipe_mapping")
-    .insert({ recipe_id: recipeId, date, type, user_id: userId });
+    .insert({ recipe_id: recipeId, date, type, user_id: userId, servings: roundServings(servings) });
 
   if (error) {
     return { ok: false as const, error: error.message };
@@ -76,6 +99,41 @@ export async function removeMealPlanEntry(entryId: number) {
 
   if (error) {
     return { ok: false as const, error: error.message };
+  }
+
+  revalidatePath("/meal-prep");
+
+  return { ok: true as const };
+}
+
+/** How many servings of a recipe were eaten. Recipe macros are read live, so only this changes. */
+export async function updateMealPlanEntryServings(entryId: number, servings: number) {
+  if (!Number.isInteger(entryId) || entryId <= 0) {
+    return { ok: false as const, error: "Invalid entry id" };
+  }
+  if (!isValidServings(servings) || roundServings(servings) <= 0) {
+    return { ok: false as const, error: "Choose between 0.5 and 20 servings" };
+  }
+
+  const supabase = await createClient();
+  const { data: claimsData, error: authError } = await supabase.auth.getClaims();
+  if (authError || !claimsData?.claims) {
+    return { ok: false as const, error: "Not authenticated" };
+  }
+  const userId = claimsData.claims.sub;
+
+  const { data, error } = await supabase
+    .from("mealplan_recipe_mapping")
+    .update({ servings: roundServings(servings) })
+    .eq("id", entryId)
+    .eq("user_id", userId)
+    .select("id");
+
+  if (error) {
+    return { ok: false as const, error: error.message };
+  }
+  if (!data || data.length === 0) {
+    return { ok: false as const, error: "That recipe is no longer on your plan" };
   }
 
   revalidatePath("/meal-prep");
@@ -184,11 +242,11 @@ export async function listRecipesForMealPlan(cookbookId?: number) {
 /* ------------------------------------------------------------------ */
 
 /**
- * Shown when the free daily AI estimates are used up. Deliberately no Premium
- * pitch: the edge function's own message has one, so it's replaced here.
+ * Quick Add is Premium only. The `estimate-macros` edge function is the real
+ * gate for the AI (it refuses free users with `premium_required`); these
+ * actions check too, so a free user can't log foods by calling them directly.
  */
-const ESTIMATE_LIMIT_MESSAGE =
-  "You’ve used today’s AI estimates. You can still add foods from Favourites and Recent.";
+const PREMIUM_REQUIRED_MESSAGE = "Quick Add is a Premium feature.";
 
 type FoodItemRow = {
   id: number;
@@ -199,6 +257,7 @@ type FoodItemRow = {
   fat_g: number;
   carbs_g: number;
   is_favourite: boolean;
+  confidence: number | null;
 };
 
 function toFoodSuggestion(row: FoodItemRow): FoodSuggestion {
@@ -211,6 +270,7 @@ function toFoodSuggestion(row: FoodItemRow): FoodSuggestion {
     fatG: Number(row.fat_g),
     carbsG: Number(row.carbs_g),
     isFavourite: row.is_favourite,
+    confidence: row.confidence,
   };
 }
 
@@ -246,6 +306,13 @@ function parseFoodItem(value: unknown): FoodMacros | null {
     return null;
   }
 
+  let confidence: number | null = null;
+  if (item.confidence != null) {
+    if (typeof item.confidence !== "number" || !Number.isInteger(item.confidence)) return null;
+    if (item.confidence < 0 || item.confidence > 10) return null;
+    confidence = item.confidence;
+  }
+
   return {
     name,
     serving,
@@ -253,6 +320,7 @@ function parseFoodItem(value: unknown): FoodMacros | null {
     proteinG: Math.round(proteinG * 10) / 10,
     fatG: Math.round(fatG * 10) / 10,
     carbsG: Math.round(carbsG * 10) / 10,
+    confidence,
   };
 }
 
@@ -264,7 +332,7 @@ export async function listFoodSuggestions() {
     return { ok: false as const, error: "Not authenticated" };
   }
   const userId = claimsData.claims.sub;
-  const columns = "id, name, serving, calories, protein_g, fat_g, carbs_g, is_favourite";
+  const columns = "id, name, serving, calories, protein_g, fat_g, carbs_g, is_favourite, confidence";
 
   const [favouritesResult, recentResult] = await Promise.all([
     supabase
@@ -312,6 +380,9 @@ export async function estimateMacros(description: string) {
   if (authError || !claimsData?.claims) {
     return { ok: false as const, error: "Not authenticated" };
   }
+  if (!(await getEntitlement()).isPremium) {
+    return { ok: false as const, error: PREMIUM_REQUIRED_MESSAGE };
+  }
 
   const { data, error } = await supabase.functions.invoke("estimate-macros", {
     body: { description: trimmed },
@@ -323,7 +394,7 @@ export async function estimateMacros(description: string) {
       try {
         const errorBody = await error.context.json();
         if (errorBody?.error) message = errorBody.error;
-        if (errorBody?.code === "macro_estimate_limit_reached") message = ESTIMATE_LIMIT_MESSAGE;
+        if (errorBody?.code === "premium_required") message = PREMIUM_REQUIRED_MESSAGE;
       } catch {
         // response body wasn't JSON; fall back to the generic message
       }
@@ -342,6 +413,7 @@ export async function estimateMacros(description: string) {
         proteinG: item.protein_g,
         fatG: item.fat_g,
         carbsG: item.carbs_g,
+        confidence: item.confidence,
       });
     })
     .filter((item): item is FoodMacros => item !== null);
@@ -377,6 +449,10 @@ export async function addFoodEntries(date: string, type: MealPlanType, items: un
     return { ok: false as const, error: "Not authenticated" };
   }
 
+  if (!(await getEntitlement()).isPremium) {
+    return { ok: false as const, error: PREMIUM_REQUIRED_MESSAGE };
+  }
+
   const userId = claimsData.claims.sub;
 
   const { error } = await supabase.rpc("meal_food_entries_add", {
@@ -389,6 +465,7 @@ export async function addFoodEntries(date: string, type: MealPlanType, items: un
       protein_g: item.proteinG,
       fat_g: item.fatG,
       carbs_g: item.carbsG,
+      confidence: item.confidence ?? null,
     })),
   });
 
@@ -470,6 +547,23 @@ export async function updateFoodEntry(entryId: number, type: MealPlanType, item:
   }
   const userId = claimsData.claims.sub;
 
+  // Hand-edited numbers aren't the AI's any more, so their confidence is
+  // cleared. A change of meal type alone keeps it.
+  const { data: current } = await supabase
+    .from("mealplan_food_entries")
+    .select("name, serving, calories, protein_g, fat_g, carbs_g")
+    .eq("id", entryId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  const numbersChanged =
+    !current ||
+    current.name !== parsed.name ||
+    current.serving !== parsed.serving ||
+    current.calories !== parsed.calories ||
+    Number(current.protein_g) !== parsed.proteinG ||
+    Number(current.fat_g) !== parsed.fatG ||
+    Number(current.carbs_g) !== parsed.carbsG;
+
   const { data, error } = await supabase
     .from("mealplan_food_entries")
     .update({
@@ -480,6 +574,7 @@ export async function updateFoodEntry(entryId: number, type: MealPlanType, item:
       protein_g: parsed.proteinG,
       fat_g: parsed.fatG,
       carbs_g: parsed.carbsG,
+      ...(numbersChanged ? { confidence: null } : {}),
     })
     .eq("id", entryId)
     .eq("user_id", userId)

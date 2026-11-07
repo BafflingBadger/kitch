@@ -5,6 +5,7 @@ import { makeOpenAIRequest } from "./openai-helper.ts"
 import { parse as parseHTML } from "npm:node-html-parser"
 import { decodeBase64 } from "jsr:@std/encoding/base64"
 import { createClient } from "https://esm.sh/@supabase/supabase-js"
+import { clampRecipeMacros } from "../_shared/recipe-macros.ts"
 
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
@@ -41,6 +42,12 @@ Deno.serve(async (req: Request) => {
     // Validate request
     const validationError = validateRequest(urlText, images)
     if (validationError) return validationError
+
+    // A silent fair-use ceiling for everyone, Premium included. Checked first,
+    // and counted per attempt, so a looping caller is stopped before it costs
+    // anything.
+    const monthlyResponse = await enforceMonthlyImportCeiling(supabase)
+    if (monthlyResponse) return monthlyResponse
 
     // Enforce the free plan's import cap BEFORE the BrightData scrape and the
     // OpenAI call, so a blocked import costs nothing.
@@ -178,7 +185,12 @@ async function buildRecipe(scrapedData: any, source: RecipeSource, urlText: stri
     const recipeJSON = getRecipeJSON(html)
 
     // Build prompt for OpenAI to parse ingredients
-    const prompt = `Website URL: ${urlText}\nIngredients: ${recipeJSON.recipeIngredient?.join(", ") ?? "null"}`
+    const prompt = [
+      `Website URL: ${urlText}`,
+      `Recipe name: ${recipeJSON.name ?? "null"}`,
+      `Recipe yield: ${formatRecipeYield(recipeJSON.recipeYield) ?? "null"}`,
+      `Ingredients: ${recipeJSON.recipeIngredient?.join(", ") ?? "null"}`,
+    ].join("\n")
 
     // Call OpenAIHelper
     const { formattedData, requestBody, response } = await makeOpenAIRequest("ingredients", prompt)
@@ -216,6 +228,7 @@ async function buildRecipe(scrapedData: any, source: RecipeSource, urlText: stri
       directions,
       source_url: urlText,
       source_text: websiteName,
+      ...clampRecipeMacros(formattedData.macros, parseServings(recipeJSON.recipeYield)),
       cookbooks: [],
       rating: 0,
       notes: null,
@@ -243,6 +256,7 @@ async function buildRecipe(scrapedData: any, source: RecipeSource, urlText: stri
       directions: formattedData.directions ?? [],
       source_url: "",
       source_text: getSourceText(source),
+      ...clampRecipeMacros(formattedData.macros, formattedData.num_servings),
       cookbooks: [],
       rating: 0,
       notes: null,
@@ -276,6 +290,7 @@ async function buildRecipe(scrapedData: any, source: RecipeSource, urlText: stri
       directions: formattedData.directions ?? [],
       source_url: urlText,
       source_text: getSourceText(source),
+      ...clampRecipeMacros(formattedData.macros, formattedData.num_servings),
       cookbooks: [],
       rating: 0,
       notes: null,
@@ -343,6 +358,24 @@ async function writeRecipeToDatabase(supabase: ReturnType<typeof createClient>, 
   }
 
   recipe.id = recipeID
+
+  // `Recipe_Write` is iOS's RPC and its signature is frozen, so the macros go
+  // in a separate update. Best effort: the columns default to zero, and a
+  // missing estimate must not fail an import the user has already waited for.
+  const { error: macrosError } = await supabase
+    .from("recipes")
+    .update({
+      servings: recipe.servings,
+      calories: recipe.calories,
+      protein_g: recipe.protein_g,
+      fat_g: recipe.fat_g,
+      carbs_g: recipe.carbs_g,
+      macros_confidence: recipe.confidence,
+    })
+    .eq("id", recipeID)
+  if (macrosError) {
+    console.error(`Failed to write recipe macros: ${macrosError.message}`)
+  }
 
   // Write ingredients
   if (recipe.ingredients?.length) {
@@ -711,6 +744,49 @@ async function enforceImportQuota(
       headers: { "Content-Type": "application/json" },
     }
   )
+}
+
+/**
+ * Returns a 429 once the caller has made 300 import attempts this UTC month,
+ * or null to let the import proceed. Applies to everyone, Premium included,
+ * regardless of `ENFORCE_IMPORT_LIMIT`: it is a cost ceiling, not a plan limit.
+ * Fails open on a database error, like the free-tier gate.
+ */
+async function enforceMonthlyImportCeiling(
+  supabase: ReturnType<typeof createClient>
+): Promise<Response | null> {
+  const { data: allowed, error } = await supabase.rpc("imports_consume_monthly")
+
+  if (error) {
+    console.error(`Could not check monthly import ceiling, allowing import: ${error.message}`)
+    return null
+  }
+  if (allowed !== false) return null
+
+  return new Response(
+    JSON.stringify({
+      error: "You've reached this month's import limit. It resets on the 1st.",
+      code: "import_monthly_limit_reached",
+    }),
+    { status: 429, headers: { "Content-Type": "application/json" } }
+  )
+}
+
+/** Schema.org `recipeYield` can be a number, a string or an array of either. */
+function formatRecipeYield(value: unknown): string | null {
+  const values = Array.isArray(value) ? value : [value]
+  const text = values
+    .filter((v) => typeof v === "string" || typeof v === "number")
+    .map(String)
+    .join(", ")
+    .trim()
+  return text ? text.slice(0, 200) : null
+}
+
+/** The first number in `recipeYield`, e.g. "Serves 4-6" -> 4. */
+function parseServings(value: unknown): number | null {
+  const match = formatRecipeYield(value)?.match(/\d+(\.\d+)?/)
+  return match ? Number(match[0]) : null
 }
 
 /** Spend one import. Never fails the request -- the recipe is already saved. */

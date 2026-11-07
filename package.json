@@ -10,7 +10,8 @@
     "functions:deploy": "supabase functions deploy import-recipe",
     "functions:deploy:stripe": "supabase functions deploy stripe-webhook",
     "functions:deploy:transfer": "supabase functions deploy transfer-subscription",
-    "functions:deploy:macros": "supabase functions deploy estimate-macros"
+    "functions:deploy:macros": "supabase functions deploy estimate-macros",
+    "functions:deploy:recipe-macros": "supabase functions deploy estimate-recipe-macros"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.20",

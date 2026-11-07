@@ -72,6 +72,8 @@ the web. Plans: `com.kitch.monthly`, `com.kitch.annual`, `com.kitch.family`
 | `subscriptions_family` | `FamilyPlan_*` RPCs |
 | `import_usage` | `imports_record()` only |
 | `macro_estimate_usage` | `macro_estimates_consume()` only |
+| `import_usage_monthly` | `imports_consume_monthly()` only |
+| `recipe_macro_usage` | `recipe_macro_estimates_consume()` only |
 
 None of these have client write policies, and that is deliberate. A counter the
 user can `PATCH` is not a limit. (`public.users` grants `authenticated`
@@ -127,12 +129,79 @@ backfilled, which is what keeps the server counter more permissive than the iOS
 client-side guard rather than stricter. Recipes written from scratch are always
 free and never counted.
 
+**Monthly import ceiling: 300 for everyone, Premium included.** A silent cost
+ceiling, not a plan feature: it caps what one account can spend on BrightData and
+OpenAI. `import-recipe` calls `imports_consume_monthly()` before anything else
+(before the free-tier gate, regardless of `ENFORCE_IMPORT_LIMIT`), and every
+attempt counts, including ones that later fail. Over the ceiling it returns
+**429 `{ code: "import_monthly_limit_reached", error }`**; show `error` as is.
+It fails open on a database error. Resets each UTC month.
+
+**Premium-only features.** Both are refused server-side for free users with
+**403 `{ code: "premium_required", error }`**:
+
+- **Quick Add** (`estimate-macros`). Until November 2026 free users had 3
+  estimates a day, and an iOS build that only knows the old
+  `macro_estimate_limit_reached` code will show the generic error with this
+  message. The web also refuses `addFoodEntries` for free users. Food entries
+  logged before the change stay readable and editable.
+- **Recipe Auto Estimate** (`estimate-recipe-macros`). Premium has a 200-a-day
+  fair-use ceiling: 429 `recipe_macro_limit_reached`.
+
+## Recipe macros
+
+Every recipe carries per-serving nutrition in columns on `public.recipes`:
+`servings numeric(5,2)` (how many the recipe makes, default 1), and per serving
+`calories integer`, `protein_g`, `fat_g`, `carbs_g numeric(6,1)`. All are
+`NOT NULL` with defaults (0 for the macros), so decode them as non-optional.
+Ranges match `food_items`. `Recipe_Write` doesn't know about them: its inserts
+take the defaults and its updates leave them alone.
+`Recipes_Read`, `Recipes_ReadAll` and `Recipes_ReadAllFollowing` return all six
+(`servings`, `calories`, `protein_g`, `fat_g`, `carbs_g`, `macros_confidence`)
+after `created_at`, so iOS needs no extra query.
+
+- **Imports fill them** in the same OpenAI call that parses the recipe (all three
+  paths ask for a `macros` object), then write them with a separate update after
+  `Recipe_Write`. No ingredients → estimated from the dish name; nothing to go
+  on → zeros. A failed write leaves zeros; the import still succeeds. The import
+  response now also includes these keys.
+- **Saving a recipe never estimates.** The owner types the numbers, or uses
+  **Auto Estimate** (Premium): call `estimate-recipe-macros` with the editor's
+  unsaved `{ name, ingredients: [string], servings? }`. It returns `{ macros: {
+  servings, calories, protein_g, fat_g, carbs_g } }` and **saves nothing**; the
+  client writes them with the recipe (owner-only UPDATE on `recipes`, as
+  before). Given `servings` is kept and the per-serving numbers computed for it.
+- **On save, if the ingredients changed but the nutrition didn't**, ask whether
+  to update it: Auto Estimate (locked for free users), edit by hand, or save
+  anyway. The web does this in `components/recipes/edit/edit-recipe-form.tsx`.
+- Recipes created or edited on iOS builds that predate this keep zeros or stale
+  numbers until they're next edited on the web or a new iOS build.
+
+**AI confidence (recorded, not shown yet).** Every AI macro estimate also returns
+`confidence`, a whole number from 0 to 10 (the model's own score). It is stored
+as `recipes.macros_confidence`, `food_items.confidence` and
+`mealplan_food_entries.confidence` (all `smallint`, nullable). Null means the
+numbers aren't an unedited AI estimate: clients **must send null once the user
+edits the numbers** (or a food's name or serving). `meal_food_entries_add`
+accepts an optional `confidence` per item; older callers record null. Existing
+rows, including the recipe backfill, are null.
+
+**Meal plan servings.** `mealplan_recipe_mapping.servings numeric(4,2) NOT NULL
+DEFAULT 1` (0 < x ≤ 20) is how many servings were eaten; old inserts get 1. There
+is now an UPDATE policy for the user's own rows. A day's totals = Quick Add foods
++ Σ (recipe per-serving macros × servings), read **live** from the recipe (unlike
+food entries, which are snapshots). `MealPlanRecipes_ReadAll` returns `setof` the
+table, so it now includes `servings`.
+
 ## Edge functions
 
 **In the web repo:** `import-recipe` (BrightData scrape → OpenAI →
-`Recipe_Write`), `stripe-webhook`, `estimate-macros` (Quick Add: text →
-per-food macros via OpenAI, 3 a day free / unlimited Premium, counted by
-`macro_estimates_consume()`), `transfer-subscription` (re-keys an Apple
+`Recipe_Write`, plus per-serving recipe macros from the same call),
+`stripe-webhook`, `estimate-macros` (Quick Add: text → per-food macros via
+OpenAI, Premium only, counted by `macro_estimates_consume()`),
+`estimate-recipe-macros` (recipe Auto Estimate, Premium only, returns numbers
+without saving; shares `supabase/functions/_shared/recipe-macros.ts` with
+`import-recipe`), `transfer-subscription` (re-keys an Apple
 subscription to the caller's own account, and moves a Family plan's seats and
 pending invites with it via `family_transfer_owner()`).
 

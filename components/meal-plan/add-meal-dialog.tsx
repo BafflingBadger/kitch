@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { BookOpen, Check, ChevronDown, ChevronLeft, Search, Sparkles, Star, X } from "lucide-react";
+import Link from "next/link";
+import { BookOpen, Check, ChevronDown, ChevronLeft, Crown, Search, Sparkles, Star, X } from "lucide-react";
 
 import {
   Dialog,
@@ -21,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { DatePickerDropdown } from "@/components/meal-plan/date-picker-dropdown";
 import { QuickAddPanel } from "@/components/meal-plan/quick-add-panel";
+import { ServingsStepper } from "@/components/meal-plan/servings-stepper";
 import { CoverImage } from "@/components/cookbooks/cover-image";
 import { sourceMeta } from "@/components/cookbooks/recipe-card";
 import {
@@ -56,7 +58,8 @@ type SortMode = (typeof SORT_OPTIONS)[number]["value"];
 type AddMealDialogProps = {
   trigger: React.ReactNode;
 } & (
-  | { date: string; recipe?: undefined }
+  // Quick Add is Premium only; without it the Quick Add tile shows a lock.
+  | { date: string; isPremium: boolean; recipe?: undefined }
   | { recipe: { id: number; name: string; imageUrl: string | null }; date?: undefined }
 );
 
@@ -75,6 +78,8 @@ export function AddMealDialog(props: AddMealDialogProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [selectedDate, setSelectedDate] = useState<string>(props.date ?? toISODate(new Date()));
   const [selectedType, setSelectedType] = useState<MealPlanType | null>(null);
+  const [servings, setServings] = useState(1);
+  const canQuickAdd = props.date !== undefined && props.isPremium;
   const [isSaving, startSaving] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -129,12 +134,13 @@ export function AddMealDialog(props: AddMealDialogProps) {
     setSearchOpen(false);
     setSelectedCookbookId("all");
     setSortMode("recent");
+    setServings(1);
     setError(null);
   };
 
-  const submitEntry = (recipeId: number, date: string, type: MealPlanType) => {
+  const submitEntry = (recipeId: number, date: string, type: MealPlanType, entryServings = 1) => {
     startSaving(async () => {
-      const result = await addMealPlanEntry(recipeId, date, type);
+      const result = await addMealPlanEntry(recipeId, date, type, entryServings);
       if (result.ok) {
         setOpen(false);
         reset();
@@ -207,10 +213,12 @@ export function AddMealDialog(props: AddMealDialogProps) {
           ) : step === "quick" ? (
             <>
               <DialogTitle className="text-xl">
-                Add {selectedType} for {dayShortLabel}
+                {canQuickAdd ? `Add ${selectedType} for ${dayShortLabel}` : "Quick Add is a Premium feature"}
               </DialogTitle>
               <DialogDescription>
-                Describe what you ate and we&rsquo;ll estimate the calories and macros.
+                {canQuickAdd
+                  ? "Describe what you ate and we’ll estimate the calories and macros."
+                  : "Log anything you ate in seconds, with AI-estimated calories and macros."}
               </DialogDescription>
             </>
           ) : recipe ? (
@@ -257,19 +265,40 @@ export function AddMealDialog(props: AddMealDialogProps) {
           ) : step === "mode" ? (
             <div className="grid grid-cols-2 gap-4">
               {[
-                { next: "target" as const, label: "Select a recipe", icon: BookOpen },
-                { next: "quick" as const, label: "Quick add", icon: Sparkles },
+                { next: "target" as const, label: "Select Recipe", icon: BookOpen },
+                { next: "quick" as const, label: "Quick Add", icon: Sparkles },
               ].map(({ next, label, icon: Icon }) => (
                 <button
                   key={next}
                   type="button"
                   onClick={() => setStep(next)}
-                  className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-kitch-charcoal/10 bg-kitch-cream py-8 shadow-sm transition-colors hover:bg-kitch-cream-dark"
+                  className="relative flex flex-col items-center justify-center gap-2 rounded-2xl border border-kitch-charcoal/10 bg-kitch-cream py-8 shadow-sm transition-colors hover:bg-kitch-cream-dark"
                 >
+                  {next === "quick" && !canQuickAdd ? (
+                    <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-kitch-orange-from to-kitch-orange-to px-2 py-0.5 text-[10px] font-semibold text-white">
+                      <Crown className="h-3 w-3" />
+                      Premium
+                    </span>
+                  ) : null}
                   <Icon className="h-6 w-6 text-kitch-red" />
                   <span className="text-sm font-semibold text-kitch-charcoal">{label}</span>
                 </button>
               ))}
+            </div>
+          ) : step === "quick" && !canQuickAdd ? (
+            <div className="flex flex-col items-center gap-4 rounded-2xl bg-kitch-cream px-6 py-8 text-center">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-kitch-orange-from to-kitch-orange-to text-white">
+                <Crown className="h-6 w-6" />
+              </span>
+              <p className="text-sm text-kitch-grey">
+                Subscribe to Kitch Premium to use Quick Add.
+              </p>
+              <Button
+                asChild
+                className="rounded-full bg-gradient-to-r from-kitch-orange-from to-kitch-orange-to text-white shadow-sm hover:opacity-90"
+              >
+                <Link href="/premium">See Premium</Link>
+              </Button>
             </div>
           ) : step === "quick" ? (
             <QuickAddPanel
@@ -291,6 +320,10 @@ export function AddMealDialog(props: AddMealDialogProps) {
               <div className="flex flex-col gap-1.5">
                 <span className="text-xs font-medium text-kitch-grey">Date</span>
                 <DatePickerDropdown value={selectedDate} onChange={setSelectedDate} />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-kitch-grey">Servings</span>
+                <ServingsStepper value={servings} onChange={setServings} />
               </div>
               {error ? <p className="text-sm text-kitch-red">{error}</p> : null}
             </>
@@ -471,7 +504,7 @@ export function AddMealDialog(props: AddMealDialogProps) {
           <DialogFooter className="p-6 pt-3">
             <Button
               type="button"
-              onClick={() => submitEntry(recipe.id, selectedDate, selectedType!)}
+              onClick={() => submitEntry(recipe.id, selectedDate, selectedType!, servings)}
               disabled={isSaving || !selectedType}
               className="bg-gradient-to-r from-kitch-orange-from to-kitch-orange-to text-white shadow-sm hover:opacity-90"
             >

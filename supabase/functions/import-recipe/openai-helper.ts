@@ -1,5 +1,6 @@
 import OpenAI from "https://esm.sh/openai"
 import { INGREDIENT_KEYWORDS } from "./ingredient-keywords.ts"
+import { RECIPE_MACROS_RULES, RECIPE_MACROS_SCHEMA } from "../_shared/recipe-macros.ts"
 
 // Request types
 type OpenAIRequestType = "recipeFromText" | "ingredients" | "recipeFromImage"
@@ -30,6 +31,9 @@ export async function makeOpenAIRequest(
   // Call OpenAI Chat API
   const response = await openai.chat.completions.create(requestBody)
 
+  // Logged so real per-import costs can be measured.
+  console.info(`OpenAI ${requestType} usage: ${JSON.stringify(response.usage ?? null)}`)
+
   const content = response.choices[0].message?.content
   if (!content) throw new Error(`OpenAI returned unexpected response: ${JSON.stringify(response)}`)
 
@@ -52,7 +56,9 @@ function getRequestBodyRecipeFromText(data: string) {
           - Directions (including subheaders)
           - Number of Servings
 
-        Return the response strictly in the provided JSON Schema format. If a field is missing, return null. Do not include extra fields or modify text.`,
+        Return the response strictly in the provided JSON Schema format. If a field is missing, return null. Do not include extra fields or modify text.
+
+        ${RECIPE_MACROS_RULES}`,
       },
       {
         role: "user",
@@ -120,9 +126,10 @@ function getRequestBodyRecipeFromText(data: string) {
             num_servings: {
               type: ["number", "null"],
               description: "The number of servings the recipe makes. This is optional."
-            }
+            },
+            macros: RECIPE_MACROS_SCHEMA
           },
-          required: ["recipe_name", "ingredients", "directions"],
+          required: ["recipe_name", "ingredients", "directions", "macros"],
           additionalProperties: false
         }
       }
@@ -140,6 +147,9 @@ function getIngredientDetailsRequest(data: string) {
           - measurement text, if it exists
           - ingredient keyword
         Also return the formatted website name.
+
+        ${RECIPE_MACROS_RULES}
+
         Return strictly in the provided JSON Schema format.`,
       },
       { role: "user", content: data },
@@ -178,8 +188,9 @@ function getIngredientDetailsRequest(data: string) {
                 required: ["ingredient_text"],
               },
             },
+            macros: RECIPE_MACROS_SCHEMA,
           },
-          required: ["websiteName", "ingredients"],
+          required: ["websiteName", "ingredients", "macros"],
         },
       },
     },
@@ -203,6 +214,8 @@ function getRequestBodyRecipeFromImage(images: string[]) {
           - Ingredients (with subheaders, quantities, units)
           - Directions (with subheaders)
           - Number of Servings
+
+        ${RECIPE_MACROS_RULES}
 
         Return strictly in the provided JSON Schema format.`,
       },
@@ -269,9 +282,10 @@ function getRequestBodyRecipeFromImage(images: string[]) {
             num_servings: {
               type: ["number", "null"],
               description: "The number of servings the recipe makes. This is optional."
-            }
+            },
+            macros: RECIPE_MACROS_SCHEMA
           },
-          required: ["recipe_name", "ingredients", "directions"],
+          required: ["recipe_name", "ingredients", "directions", "macros"],
           additionalProperties: false
         }
       }

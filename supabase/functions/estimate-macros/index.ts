@@ -4,13 +4,17 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import OpenAI from "https://esm.sh/openai@4"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
+import { clampConfidence, CONFIDENCE_RULE } from "../_shared/recipe-macros.ts"
+
 /**
  * Quick Add: turn a plain-text description of what someone ate into a list of
  * foods with estimated macros.
  *
- * Returns `{ items, remaining }`, where `remaining` is the caller's AI
- * estimates left today (null for Premium). Saving the items is a separate step
- * (`meal_food_entries_add`), so the user can review the numbers first.
+ * Premium only: `macro_estimates_consume()` refuses anyone without Premium,
+ * and this returns 403 `premium_required`. Returns `{ items, remaining }`;
+ * `remaining` is always null now (Premium is unlimited) and is kept for older
+ * clients. Saving the items is a separate step (`meal_food_entries_add`), so
+ * the user can review the numbers first.
  */
 
 interface EstimateMacrosPayload {
@@ -24,6 +28,8 @@ interface MacroItem {
   protein_g: number
   fat_g: number
   carbs_g: number
+  /** Whole number out of 10. */
+  confidence: number | null
 }
 
 const MAX_DESCRIPTION = 1000
@@ -42,9 +48,8 @@ Deno.serve(async (req: Request) => {
       return json({ error: `Describe what you ate in 1 to ${MAX_DESCRIPTION} characters.` }, 400)
     }
 
-    // Spend the estimate BEFORE the OpenAI call, so a blocked request costs
-    // nothing. Unlike the import quota this fails closed: there is no paid
-    // work at stake, and the user can still add saved foods without the AI.
+    // Check entitlement BEFORE the OpenAI call, so a blocked request costs
+    // nothing. Unlike the import quota this fails closed.
     const { data: quota, error: quotaError } = await supabase.rpc("macro_estimates_consume")
     if (quotaError) {
       console.error(`Could not consume macro estimate: ${quotaError.message}`)
@@ -54,11 +59,10 @@ Deno.serve(async (req: Request) => {
     if (!usage?.allowed) {
       return json(
         {
-          error: "You've used today's free AI estimates. Subscribe to Kitch Premium for unlimited Quick Add.",
-          code: "macro_estimate_limit_reached",
-          remaining: 0,
+          error: "Quick Add is a Kitch Premium feature.",
+          code: "premium_required",
         },
-        429
+        403
       )
     }
 
@@ -113,6 +117,7 @@ Split it into distinct food items and estimate each item's macros for the amount
 - "serving" is the amount eaten (e.g. "2 large", "1 cup", "1 slice"), or null if unknown.
 - Calories are whole numbers; protein, fat and carbs are grams rounded to one decimal.
 - Return at most ${MAX_ITEMS} items. If the text describes no food, return an empty list.
+${CONFIDENCE_RULE}
 Return the response strictly in the provided JSON Schema format.`,
       },
       { role: "user", content: description },
@@ -136,8 +141,9 @@ Return the response strictly in the provided JSON Schema format.`,
                   protein_g: { type: "number" },
                   fat_g: { type: "number" },
                   carbs_g: { type: "number" },
+                  confidence: { type: "integer" },
                 },
-                required: ["name", "serving", "calories", "protein_g", "fat_g", "carbs_g"],
+                required: ["name", "serving", "calories", "protein_g", "fat_g", "carbs_g", "confidence"],
                 additionalProperties: false,
               },
             },
@@ -148,6 +154,8 @@ Return the response strictly in the provided JSON Schema format.`,
       },
     },
   })
+
+  console.info(`OpenAI usage: ${JSON.stringify(response.usage ?? null)}`)
 
   const content = response.choices[0]?.message?.content
   if (!content) throw new Error(`OpenAI returned unexpected response: ${JSON.stringify(response)}`)
@@ -169,6 +177,7 @@ Return the response strictly in the provided JSON Schema format.`,
       protein_g: roundTenth(clamp(item.protein_g, 1000)),
       fat_g: roundTenth(clamp(item.fat_g, 1000)),
       carbs_g: roundTenth(clamp(item.carbs_g, 1000)),
+      confidence: clampConfidence(item.confidence),
     }]
   })
 }
