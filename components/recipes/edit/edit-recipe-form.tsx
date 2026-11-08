@@ -159,7 +159,8 @@ export function EditRecipeForm({
         rating,
         notes,
         thumbnail,
-        ingredients: ingredients.map(({ desc, is_heading }) => ({ desc, is_heading })),
+        // The id lets the server keep each row's icon keyword and measurement
+        ingredients: ingredients.map(({ id, desc, is_heading }) => ({ id, desc, is_heading })),
         directions: directions.map(({ desc, is_heading }) => ({ desc, is_heading })),
         macros,
       });

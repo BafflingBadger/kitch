@@ -15,7 +15,8 @@ function recipeThumbnailUrl(path: string | null | undefined) {
 const UPLOADED_THUMBNAIL =
   /^public\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp|heic)$/;
 
-type RecipeRow = { desc: string; is_heading: boolean };
+/** `id` is the existing row being edited, or null for a new one. */
+type RecipeRow = { id?: number | null; desc: string; is_heading: boolean };
 
 function isRecipeRowList(value: unknown): value is RecipeRow[] {
   return (
@@ -25,7 +26,8 @@ function isRecipeRowList(value: unknown): value is RecipeRow[] {
       (row) =>
         typeof row?.desc === "string" &&
         row.desc.length <= LIMITS.recipeLine &&
-        typeof row.is_heading === "boolean",
+        typeof row.is_heading === "boolean" &&
+        (row.id == null || (Number.isInteger(row.id) && row.id > 0)),
     )
   );
 }
@@ -133,8 +135,8 @@ export async function updateRecipe(
     rating: number;
     notes: string | null;
     thumbnail: string | null;
-    ingredients: { desc: string; is_heading: boolean }[];
-    directions: { desc: string; is_heading: boolean }[];
+    ingredients: RecipeRow[];
+    directions: RecipeRow[];
     macros: RecipeMacrosInput;
   },
 ) {
@@ -207,14 +209,36 @@ export async function updateRecipe(
     return { ok: false as const, error: updateError.message };
   }
 
+  // The editor only edits text, so carry over what it doesn't show: the icon
+  // `keyword` (iOS draws ingredient icons from it) and the `measurement` it
+  // bolds. Matched by the row's id on the server, so a caller can't set them.
+  const { data: existingIngredients, error: existingIngredientsError } = await supabase
+    .from("ingredients")
+    .select("id, keyword, measurement")
+    .eq("recipe_id", recipeId);
+  if (existingIngredientsError) {
+    return { ok: false as const, error: existingIngredientsError.message };
+  }
+  const existingById = new Map((existingIngredients ?? []).map((row) => [row.id, row]));
+
   const ingredientRows = input.ingredients
     .filter((row) => row.desc.trim() !== "")
-    .map((row, index) => ({
-      recipe_id: recipeId,
-      desc: row.desc.trim(),
-      order: index,
-      is_heading: row.is_heading,
-    }));
+    .map((row, index) => {
+      const desc = row.desc.trim();
+      const existing = row.id != null && !row.is_heading ? existingById.get(row.id) : undefined;
+      // An edited line is still the same ingredient, but its measurement must
+      // still appear in the text, since clients bold it by finding it there.
+      const measurement =
+        existing?.measurement && desc.includes(existing.measurement) ? existing.measurement : null;
+      return {
+        recipe_id: recipeId,
+        desc,
+        order: index,
+        is_heading: row.is_heading,
+        keyword: existing?.keyword ?? null,
+        measurement,
+      };
+    });
   const directionRows = input.directions
     .filter((row) => row.desc.trim() !== "")
     .map((row, index) => ({
