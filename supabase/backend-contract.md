@@ -193,6 +193,26 @@ is now an UPDATE policy for the user's own rows. A day's totals = Quick Add food
 food entries, which are snapshots). `MealPlanRecipes_ReadAll` returns `setof` the
 table, so it now includes `servings`.
 
+## Ingredient image keywords
+
+`ingredients.keyword` names the ingredient's image. The list lives in
+`public.ingredient_keywords` (`keyword`, `image_name` = the iOS asset name,
+`aliases`): readable by everyone, changed only by migration. iOS bundles the
+images, so a new `image_name` shows "unknown" until an iOS build ships it; point
+new keywords at an existing asset until then.
+
+- **Matching without AI** is the same on both clients: iOS
+  `Recipe App/Model/IngredientKeywords.swift`, web `lib/ingredients/keywords.ts`.
+  Change them together.
+- A stored keyword is **missing** if it is null, `''`, the string `"null"` (old
+  imports) or not in the table; clients match missing keywords instead.
+- **iOS** shows the images and lets users pick one per ingredient. **The web
+  shows no ingredient images**; on save it applies the same rules (headings →
+  null, a picked keyword survives a text edit, an automatic one follows the new
+  text, missing ones get a match).
+- **`import-recipe`** offers the table's keywords to the AI (cached 10 minutes
+  per instance) and stores only values from the table, else a real null.
+
 ## Edge functions
 
 **In the web repo:** `import-recipe` (BrightData scrape → OpenAI →

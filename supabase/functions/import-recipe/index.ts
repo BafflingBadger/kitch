@@ -2,6 +2,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 
 import { makeOpenAIRequest } from "./openai-helper.ts"
+import { cleanKeyword, getIngredientKeywords } from "./ingredient-keywords.ts"
 import { parse as parseHTML } from "npm:node-html-parser"
 import { decodeBase64 } from "jsr:@std/encoding/base64"
 import { createClient } from "https://esm.sh/@supabase/supabase-js"
@@ -64,7 +65,8 @@ Deno.serve(async (req: Request) => {
     }
 
     // Build recipe (OpenAI)
-    const {recipe, openAIRequest, openAIResponse, sourceImagePaths} = await buildRecipe(scrapedData, source, urlText, images, user)
+    const keywords = await getIngredientKeywords(supabase)
+    const {recipe, openAIRequest, openAIResponse, sourceImagePaths} = await buildRecipe(scrapedData, source, urlText, images, user, keywords)
 
     // Write recipe to database
     await writeRecipeToDatabase(
@@ -72,7 +74,8 @@ Deno.serve(async (req: Request) => {
       recipe,
       openAIRequest,
       openAIResponse,
-      sourceImagePaths
+      sourceImagePaths,
+      keywords
     )
 
     // Only now, with the recipe actually written, does the import count. An
@@ -174,7 +177,7 @@ async function scrapeRecipeSource(snapshotID: string): Promise<any> {
 /* Recipe / Storage / DB                                               */
 /* ------------------------------------------------------------------ */
 
-async function buildRecipe(scrapedData: any, source: RecipeSource, urlText: string, images: string[], user: any) {
+async function buildRecipe(scrapedData: any, source: RecipeSource, urlText: string, images: string[], user: any, keywords: string[]) {
   if (source === "web") {
     const html = scrapedData.page_html
     if (!html || typeof html !== "string") {
@@ -193,7 +196,7 @@ async function buildRecipe(scrapedData: any, source: RecipeSource, urlText: stri
     ].join("\n")
 
     // Call OpenAIHelper
-    const { formattedData, requestBody, response } = await makeOpenAIRequest("ingredients", prompt)
+    const { formattedData, requestBody, response } = await makeOpenAIRequest("ingredients", prompt, [], keywords)
 
     const websiteName = formattedData.websiteName
 
@@ -242,7 +245,7 @@ async function buildRecipe(scrapedData: any, source: RecipeSource, urlText: stri
     }
 
   } else if (source === "image") {
-    const {formattedData, requestBody, response} = await makeOpenAIRequest("recipeFromImage", "", images)
+    const {formattedData, requestBody, response} = await makeOpenAIRequest("recipeFromImage", "", images, keywords)
 
     // Retain the uploaded originals so this extraction can be re-checked or
     // re-parsed later. Deliberately not used as the thumbnail.
@@ -275,7 +278,7 @@ async function buildRecipe(scrapedData: any, source: RecipeSource, urlText: stri
         ? scrapedData.content
         : scrapedData.description
 
-    const {formattedData, requestBody, response} = await makeOpenAIRequest("recipeFromText", rawText)
+    const {formattedData, requestBody, response} = await makeOpenAIRequest("recipeFromText", rawText, [], keywords)
 
     let imagePath: string | null = null
     if (scrapedData) {
@@ -333,7 +336,7 @@ function stripImagesFromRequestLog(requestBody: any) {
   }
 }
 
-async function writeRecipeToDatabase(supabase: ReturnType<typeof createClient>, recipe: any, requestBody: string | null, response: string | null, sourceImagePaths: string[] = []) {
+async function writeRecipeToDatabase(supabase: ReturnType<typeof createClient>, recipe: any, requestBody: string | null, response: string | null, sourceImagePaths: string[] = [], keywords: string[] = []) {
   // Write recipe (RPC)
   const recipePayload = {
     _id: recipe.id ?? "0",
@@ -385,7 +388,7 @@ async function writeRecipeToDatabase(supabase: ReturnType<typeof createClient>, 
         order: index,
         is_heading: ingredient.is_heading,
         desc: ingredient.summary,
-        keyword: ingredient.keyword ?? null,
+        keyword: ingredient.is_heading ? null : cleanKeyword(ingredient.keyword, keywords),
         measurement: ingredient.measurement ?? null
       })
     )

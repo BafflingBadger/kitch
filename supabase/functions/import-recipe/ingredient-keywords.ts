@@ -1,41 +1,36 @@
-export const INGREDIENT_KEYWORDS = [
-  "beef","chicken","bacon","sausage","pork","ribs","lamb chops","leg of lamb","turkey","duck",
-  "venison","bison","rabbit","salmon","tuna","cod","tilapia","shrimp","prawns","lobster","crab",
-  "mussels","clams","scallops","squid","octopus","oyster","sardines","anchovies","apple",
-  "banana","orange","lemon","lime","grapefruit","strawberry","blueberry","raspberry",
-  "blackberry","mango","pineapple","watermelon","cantaloupe","honeydew","kiwi","pomegranate",
-  "cherry","peach","plum","pear","fig","papaya","dragon fruit","passion fruit","avocado",
-  "coconut","grapes","carrot","potato","sweet potato","yam","onion","white onion","shallot",
-  "red onion","green onion","garlic","tomato","bell pepper","jalapeno","chili pepper",
-  "cucumber","zucchini","eggplant","cabbage","lettuce","spinach","kale","arugula","celery",
-  "broccoli","brussel sprouts","cauliflower","green beans","peas","asparagus","corn",
-  "mushrooms","beets","radish","turnip","okra","milk","butter","cheddar cheese","swiss cheese",
-  "brie cheese","gouda cheese","feta cheese","parmesan","cream","yogurt","sour cream",
-  "cottage cheese","eggs","almonds","walnuts","cashews","peanuts","pecans","hazelnuts",
-  "pistachios","macadamia nuts","sunflower seeds","chia seeds","flaxseeds","sesame seeds",
-  "pumpkin seeds","rice","white rice","quinoa","barley","oats","wheat","cornmeal","lentils",
-  "chickpeas","black beans","kidney beans","pinto beans","navy beans","green lentils",
-  "split peas","white sugar","sugar","brown sugar","honey","maple syrup","molasses",
-  "agave syrup","stevia","salt","black pepper","cumin","paprika","smoked paprika",
-  "cinnamon","nutmeg","cloves","cardamom pod","cardamom powder","coriander","cilantro",
-  "ginger","garlic powder","onion powder","oregano","thyme","basil","rosemary","parsley",
-  "dill","bay leaves","sage","chili powder","cayenne pepper","mustard seeds","saffron",
-  "olive oil","vegetable oil","coconut oil","canola oil","avocado oil","oil",
-  "sunflower oil","sesame oil","peanut oil","apple cider vinegar","balsamic vinegar",
-  "white vinegar","vinegar","red wine vinegar","flour","baking powder","baking soda",
-  "yeast","cornstarch","cocoa powder","vanilla extract","water","chicken broth",
-  "beef broth","vegetable broth","soy sauce","fish sauce","worcestershire sauce",
-  "ketchup","mustard","mayonnaise","hot sauce","barbecue sauce","coconut milk","tofu",
-  "salami","prosciutto","pepperoni","spaghetti","macaroni","garlic paste","deli turkey",
-  "shaved turkey","deli ham","shaved ham","penne","linguine","fettuccine","white wine",
-  "red wine","peanut butter","jam","meat balls","ham","edamame","apricot",
-  "chocolate milk","black rice","brown rice","cranberry sauce","apple juice",
-  "rigatoni","protein powder","cream cheese","yellow curry powder","curry powder",
-  "cranberries","orange juice","cranberry juice","bread","baguette",
-  "hamburger buns","hotdog buns","buns","tortilla","english muffin",
-  "naan bread","croissant","shortening","lard","red pepper flakes",
-  "sweet thai chili sauce","teriyaki sauce","pesto","chocoloate","pickles",
-  "salsa","bagel","canned item","packet item","bottled item",
-  "green curry powder","red curry powder","chili flakes",
-  "green tea powder","tea","null"
-] as const
+// The keywords the AI picks from for each ingredient, read from the
+// `ingredient_keywords` table that iOS and the web app match against too.
+// Change the list with a migration, not here.
+
+// Reference data that changes with a migration, so a warm instance can reuse it
+// for a while instead of reading it on every import.
+const CACHE_MS = 10 * 60 * 1000
+let cached: { keywords: string[]; at: number } | null = null
+
+// The keywords, or the last list loaded if the read fails. Empty only when it
+// has never loaded: imports then store null keywords, and clients match them
+// on device.
+export async function getIngredientKeywords(supabase: any): Promise<string[]> {
+  if (cached && Date.now() - cached.at < CACHE_MS) return cached.keywords
+
+  const { data, error } = await supabase.from("ingredient_keywords").select("keyword")
+  if (error || !data?.length) {
+    console.error(`Failed to load ingredient keywords: ${error?.message ?? "no rows"}`)
+    return cached?.keywords ?? []
+  }
+
+  cached = { keywords: data.map((row: { keyword: string }) => row.keyword).sort(), at: Date.now() }
+  return cached.keywords
+}
+
+// The `keyword` property for the OpenAI schema. A real null means "none": the
+// old hard-coded list had a "null" string for this, which then got saved.
+export function keywordSchema(keywords: string[], description: string) {
+  if (!keywords.length) return { type: "null", description: "Always null." }
+  return { type: ["string", "null"], enum: [...keywords, null], description }
+}
+
+// What gets stored: a keyword from the list, or null. Never the string "null".
+export function cleanKeyword(keyword: unknown, keywords: string[]): string | null {
+  return typeof keyword === "string" && keywords.includes(keyword) ? keyword : null
+}

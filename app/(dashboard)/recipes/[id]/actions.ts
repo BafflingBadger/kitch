@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getEntitlement } from "@/lib/subscription/entitlement";
 import { LIMITS, isIdList } from "@/lib/validation/limits";
+import { keywordAfterEdit, matchKeyword } from "@/lib/ingredients/keywords";
+import { getIngredientVocabulary } from "@/lib/ingredients/server";
 
 function recipeThumbnailUrl(path: string | null | undefined) {
   if (!path) return null;
@@ -210,12 +212,16 @@ export async function updateRecipe(
   }
 
   // The editor only edits text, so carry over what it doesn't show: the icon
-  // `keyword` (iOS draws ingredient icons from it) and the `measurement` it
+  // `keyword` (iOS draws ingredient images from it) and the `measurement` it
   // bolds. Matched by the row's id on the server, so a caller can't set them.
-  const { data: existingIngredients, error: existingIngredientsError } = await supabase
-    .from("ingredients")
-    .select("id, keyword, measurement")
-    .eq("recipe_id", recipeId);
+  const [{ data: existingIngredients, error: existingIngredientsError }, vocabulary] =
+    await Promise.all([
+      supabase
+        .from("ingredients")
+        .select("id, desc, keyword, measurement")
+        .eq("recipe_id", recipeId),
+      getIngredientVocabulary(supabase),
+    ]);
   if (existingIngredientsError) {
     return { ok: false as const, error: existingIngredientsError.message };
   }
@@ -230,12 +236,20 @@ export async function updateRecipe(
       // still appear in the text, since clients bold it by finding it there.
       const measurement =
         existing?.measurement && desc.includes(existing.measurement) ? existing.measurement : null;
+      // Picked the way iOS picks it, with no AI. A keyword chosen on iOS
+      // survives a text edit; an automatic one follows the new text, and a
+      // missing one ("null", or no longer in the list) gets a match.
+      const keyword = row.is_heading
+        ? null
+        : existing
+          ? keywordAfterEdit(vocabulary, existing.keyword, existing.desc, desc, existing.measurement)
+          : matchKeyword(vocabulary, desc);
       return {
         recipe_id: recipeId,
         desc,
         order: index,
         is_heading: row.is_heading,
-        keyword: existing?.keyword ?? null,
+        keyword,
         measurement,
       };
     });

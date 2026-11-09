@@ -434,6 +434,27 @@ export type Database = {
         }
         Relationships: []
       }
+      ingredient_keywords: {
+        Row: {
+          aliases: string[]
+          image_name: string
+          keyword: string
+          updated_at: string
+        }
+        Insert: {
+          aliases?: string[]
+          image_name: string
+          keyword: string
+          updated_at?: string
+        }
+        Update: {
+          aliases?: string[]
+          image_name?: string
+          keyword?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ingredients: {
         Row: {
           created_at: string

@@ -1,5 +1,5 @@
 import OpenAI from "https://esm.sh/openai"
-import { INGREDIENT_KEYWORDS } from "./ingredient-keywords.ts"
+import { keywordSchema } from "./ingredient-keywords.ts"
 import { RECIPE_MACROS_RULES, RECIPE_MACROS_SCHEMA } from "../_shared/recipe-macros.ts"
 
 // Request types
@@ -8,7 +8,8 @@ type OpenAIRequestType = "recipeFromText" | "ingredients" | "recipeFromImage"
 export async function makeOpenAIRequest(
   requestType: OpenAIRequestType,
   input: string = "",
-  images: string[] = [] // base64 image strings
+  images: string[] = [], // base64 image strings
+  keywords: string[] = [] // from the ingredient_keywords table
 ): Promise<{ formattedData: any; requestBody: any; response: string }> {
   const openai = new OpenAI({
     apiKey: Deno.env.get("OPENAI_API_KEY"),
@@ -18,13 +19,13 @@ export async function makeOpenAIRequest(
 
   switch (requestType) {
     case "recipeFromText":
-      requestBody = getRequestBodyRecipeFromText(input)
+      requestBody = getRequestBodyRecipeFromText(input, keywords)
       break
     case "ingredients":
-      requestBody = getIngredientDetailsRequest(input)
+      requestBody = getIngredientDetailsRequest(input, keywords)
       break
     case "recipeFromImage":
-      requestBody = getRequestBodyRecipeFromImage(images)
+      requestBody = getRequestBodyRecipeFromImage(images, keywords)
       break
   }
 
@@ -44,7 +45,7 @@ export async function makeOpenAIRequest(
 
 /* --------------------------- Request Bodies -------------------------- */
 
-function getRequestBodyRecipeFromText(data: string) {
+function getRequestBodyRecipeFromText(data: string, keywords: string[]) {
   return {
     model: "gpt-4o",
     messages: [
@@ -94,11 +95,7 @@ function getRequestBodyRecipeFromText(data: string) {
                     type: ["string", "null"],
                     description: "The measurement of the ingredient, for example '3/4 tablespoons'. The text must be contained somewhere inside the 'summary' sibling JSON property. If no quantity is found, return null."
                   },
-                  keyword: {
-                    type: ["string", "null"],
-                    enum: INGREDIENT_KEYWORDS,
-                    description: "A predefined keyword representing the ingredient, or null if none."
-                  }
+                  keyword: keywordSchema(keywords, "A predefined keyword representing the ingredient, or null if none.")
                 },
                 required: ["is_heading", "summary"],
                 additionalProperties: false
@@ -137,7 +134,7 @@ function getRequestBodyRecipeFromText(data: string) {
   }
 }
 
-function getIngredientDetailsRequest(data: string) {
+function getIngredientDetailsRequest(data: string, keywords: string[]) {
   return {
     model: "gpt-4o",
     messages: [
@@ -179,11 +176,7 @@ function getIngredientDetailsRequest(data: string) {
                     type: ["string", "null"],
                     description: "The measurement text of the ingredient, for example '3/4 tablespoons'. The measurement text must be contained somewhere inside the ingredient text. If no quantity or measurement is found, return null."
                   },
-                  keyword: { 
-                    type: ["string", "null"],
-                    enum: INGREDIENT_KEYWORDS,
-                    description: "Select a single keyword from the predefined list that best describes the ingredient. If no keyword in the list is suitable for the ingredient, return null." 
-                  },
+                  keyword: keywordSchema(keywords, "Select a single keyword from the predefined list that best describes the ingredient. If no keyword in the list is suitable for the ingredient, return null."),
                 },
                 required: ["ingredient_text"],
               },
@@ -197,7 +190,7 @@ function getIngredientDetailsRequest(data: string) {
   }
 }
 
-function getRequestBodyRecipeFromImage(images: string[]) {
+function getRequestBodyRecipeFromImage(images: string[], keywords: string[]) {
   // images are already base64 data URIs
   const imageObjects = images.map((img) => ({
     type: "image_url",
@@ -250,11 +243,7 @@ function getRequestBodyRecipeFromImage(images: string[]) {
                     type: ["string", "null"],
                     description: "The measurement of the ingredient, for example '3/4 tablespoons'. The text must be contained somewhere inside the 'summary' sibling JSON property. If no quantity is found, return null."
                   },
-                  keyword: {
-                    type: ["string", "null"],
-                    enum: INGREDIENT_KEYWORDS,
-                    description: "A predefined keyword representing the ingredient, or null if none."
-                  }
+                  keyword: keywordSchema(keywords, "A predefined keyword representing the ingredient, or null if none.")
                 },
                 required: ["is_heading", "summary"],
                 additionalProperties: false
