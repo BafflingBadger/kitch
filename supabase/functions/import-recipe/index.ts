@@ -2,7 +2,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 
 import { makeOpenAIRequest } from "./openai-helper.ts"
-import { cleanKeyword, getIngredientKeywords } from "./ingredient-keywords.ts"
+import { getIngredientKeywords, resolveKeyword, type IngredientKeywords } from "./ingredient-keywords.ts"
 import { parse as parseHTML } from "npm:node-html-parser"
 import { decodeBase64 } from "jsr:@std/encoding/base64"
 import { createClient } from "https://esm.sh/@supabase/supabase-js"
@@ -177,7 +177,7 @@ async function scrapeRecipeSource(snapshotID: string): Promise<any> {
 /* Recipe / Storage / DB                                               */
 /* ------------------------------------------------------------------ */
 
-async function buildRecipe(scrapedData: any, source: RecipeSource, urlText: string, images: string[], user: any, keywords: string[]) {
+async function buildRecipe(scrapedData: any, source: RecipeSource, urlText: string, images: string[], user: any, keywords: IngredientKeywords) {
   if (source === "web") {
     const html = scrapedData.page_html
     if (!html || typeof html !== "string") {
@@ -196,7 +196,7 @@ async function buildRecipe(scrapedData: any, source: RecipeSource, urlText: stri
     ].join("\n")
 
     // Call OpenAIHelper
-    const { formattedData, requestBody, response } = await makeOpenAIRequest("ingredients", prompt, [], keywords)
+    const { formattedData, requestBody, response } = await makeOpenAIRequest("ingredients", prompt, [], keywords.list)
 
     const websiteName = formattedData.websiteName
 
@@ -245,7 +245,7 @@ async function buildRecipe(scrapedData: any, source: RecipeSource, urlText: stri
     }
 
   } else if (source === "image") {
-    const {formattedData, requestBody, response} = await makeOpenAIRequest("recipeFromImage", "", images, keywords)
+    const {formattedData, requestBody, response} = await makeOpenAIRequest("recipeFromImage", "", images, keywords.list)
 
     // Retain the uploaded originals so this extraction can be re-checked or
     // re-parsed later. Deliberately not used as the thumbnail.
@@ -278,7 +278,7 @@ async function buildRecipe(scrapedData: any, source: RecipeSource, urlText: stri
         ? scrapedData.content
         : scrapedData.description
 
-    const {formattedData, requestBody, response} = await makeOpenAIRequest("recipeFromText", rawText, [], keywords)
+    const {formattedData, requestBody, response} = await makeOpenAIRequest("recipeFromText", rawText, [], keywords.list)
 
     let imagePath: string | null = null
     if (scrapedData) {
@@ -336,7 +336,7 @@ function stripImagesFromRequestLog(requestBody: any) {
   }
 }
 
-async function writeRecipeToDatabase(supabase: ReturnType<typeof createClient>, recipe: any, requestBody: string | null, response: string | null, sourceImagePaths: string[] = [], keywords: string[] = []) {
+async function writeRecipeToDatabase(supabase: ReturnType<typeof createClient>, recipe: any, requestBody: string | null, response: string | null, sourceImagePaths: string[] = [], keywords: IngredientKeywords) {
   // Write recipe (RPC)
   const recipePayload = {
     _id: recipe.id ?? "0",
@@ -388,7 +388,9 @@ async function writeRecipeToDatabase(supabase: ReturnType<typeof createClient>, 
         order: index,
         is_heading: ingredient.is_heading,
         desc: ingredient.summary,
-        keyword: ingredient.is_heading ? null : cleanKeyword(ingredient.keyword, keywords),
+        keyword: ingredient.is_heading
+          ? null
+          : resolveKeyword(ingredient.keyword, ingredient.summary, ingredient.measurement, keywords),
         measurement: ingredient.measurement ?? null
       })
     )

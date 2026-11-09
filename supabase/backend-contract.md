@@ -201,9 +201,10 @@ table, so it now includes `servings`.
 images, so a new `image_name` shows "unknown" until an iOS build ships it; point
 new keywords at an existing asset until then.
 
-- **Matching without AI** is the same on both clients: iOS
-  `Recipe App/Model/IngredientKeywords.swift`, web `lib/ingredients/keywords.ts`.
-  Change them together.
+- **Matching without AI** is the same everywhere: iOS
+  `Recipe App/Model/IngredientKeywords.swift`, and for the web and
+  `import-recipe` one shared file, `supabase/functions/_shared/keyword-matcher.ts`
+  (re-exported as `lib/ingredients/keywords.ts`). Change them together.
 - A stored keyword is **missing** if it is null, `''`, the string `"null"` (old
   imports) or not in the table; clients match missing keywords instead.
 - **iOS** shows the images and lets users pick one per ingredient. **The web
@@ -211,7 +212,9 @@ new keywords at an existing asset until then.
   null, a picked keyword survives a text edit, an automatic one follows the new
   text, missing ones get a match).
 - **`import-recipe`** offers the table's keywords to the AI (cached 10 minutes
-  per instance) and stores only values from the table, else a real null.
+  per instance). When the AI's answer is missing or not in the table, it stores
+  the matcher's pick for the line, else a real null, so imports from either app
+  store the keyword the clients would show.
 
 ## Edge functions
 
