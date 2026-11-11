@@ -8,7 +8,7 @@ import { DashboardSearch } from "@/components/cookbooks/dashboard-search";
 import { ProfileMenu } from "@/components/cookbooks/profile-menu";
 import { getEntitlement } from "@/lib/subscription/entitlement";
 
-async function TopbarProfile() {
+async function SidebarProfile() {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
 
@@ -49,7 +49,15 @@ export default function DashboardLayout({
       {/* usePathname on a dynamic route counts as request data under Cache
           Components, so the sidebar still needs a boundary. */}
       <Suspense fallback={<div className="w-72 shrink-0 bg-kitch-cream-dark" />}>
-        <CookbookSidebar />
+        <CookbookSidebar
+          profile={
+            // The profile reads the user row, so it suspends on its own;
+            // reserve its height so the sidebar doesn't jump.
+            <Suspense fallback={<div className="h-10" />}>
+              <SidebarProfile />
+            </Suspense>
+          }
+        />
       </Suspense>
       {/* A column so the page area below the topbar has a definite height. A
           page whose root has data-fill-screen (Meal Plan) gets exactly the
@@ -61,12 +69,8 @@ export default function DashboardLayout({
           <div />
           <DashboardSearch />
           <div className="flex items-center justify-end gap-4">
-            {/* The profile reads the user row and New Recipe reads import
-                quota, so both suspend; reserve their size to keep the page
-                from jumping as they resolve. */}
-            <Suspense fallback={<div className="h-[50px] w-[50px]" />}>
-              <TopbarProfile />
-            </Suspense>
+            {/* New Recipe reads import quota, so it suspends; reserve its
+                size to keep the page from jumping as it resolves. */}
             <Suspense fallback={<div className="h-10 w-[132px]" />}>
               <NewRecipeButton />
             </Suspense>

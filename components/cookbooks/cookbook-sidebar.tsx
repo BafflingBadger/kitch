@@ -7,7 +7,6 @@ import {
   BookOpen,
   Calendar,
   Compass,
-  Settings,
   ShoppingCart,
 } from "lucide-react";
 
@@ -25,9 +24,6 @@ const navItems = [
   { href: "/discover", label: "Discover", icon: Compass },
 ];
 
-// Sits apart from the others, pinned to the bottom of the sidebar.
-const settingsItem = { href: "/settings", label: "Settings", icon: Settings };
-
 type NavItem = {
   href: string;
   label: string;
@@ -35,7 +31,7 @@ type NavItem = {
   activePrefixes?: string[];
 };
 
-export function CookbookSidebar() {
+export function CookbookSidebar({ profile }: { profile: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
@@ -77,11 +73,7 @@ export function CookbookSidebar() {
         </nav>
       </div>
 
-      <div className="border-t border-kitch-charcoal/10 pt-4">
-        <nav className="flex flex-col gap-1">
-          <NavLink item={settingsItem} pathname={pathname} />
-        </nav>
-      </div>
+      <div className="border-t border-kitch-charcoal/10 pt-4">{profile}</div>
     </aside>
   );
 }
