@@ -167,7 +167,7 @@ export function EditCookbookDialog({
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
                   placeholder="e.g. Weeknight Favorites"
-                  className="h-11 rounded-full border-kitch-charcoal/15 bg-kitch-cream px-4 text-kitch-charcoal placeholder:text-kitch-grey"
+                  className="h-11 rounded-full border-kitch-charcoal/15 bg-kitch-cream px-4 text-kitch-charcoal placeholder:text-kitch-grey focus-visible:border-kitch-red/40 focus-visible:ring-2 focus-visible:ring-kitch-red/20"
                 />
               </div>
 
