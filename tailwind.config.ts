@@ -95,6 +95,9 @@ export default {
     // hide until hovered use it, so they stay visible on touch screens.
     plugin(({ addVariant }) => {
       addVariant("can-hover", "@media (hover: hover) and (pointer: fine)");
+      // `actions-row:` applies once the recipe action buttons' container is
+      // wide enough for all four labels on one line (measured: 4 × ~128px).
+      addVariant("actions-row", "@container recipe-actions (min-width: 33rem)");
     }),
   ],
 } satisfies Config;

@@ -113,7 +113,22 @@ async function RecipeDetailContent({
               ingredients={ingredientRows ?? []}
             />
           </div>
-          <div className="mt-5">
+        </div>
+      </div>
+
+      <div className="mx-auto mt-8 h-px w-full max-w-6xl bg-kitch-charcoal/10" />
+
+      <div className="mx-auto mt-10 grid max-w-5xl grid-cols-1 gap-10 lg:grid-cols-12 lg:items-start lg:gap-14">
+        <div className="lg:sticky lg:top-8 lg:col-span-4 lg:flex lg:flex-col lg:gap-6">
+          <RecipeIngredients
+            items={ingredientRows ?? []}
+            servings={Number(recipe.servings)}
+          />
+          <RecipeNotes notes={recipe.notes} />
+        </div>
+        <div className="lg:col-span-8">
+          <RecipeDirections items={directionRows ?? []} />
+          <div className="mt-10">
             <RecipeNutrition
               nutrition={{
                 servings: Number(recipe.servings),
@@ -124,18 +139,6 @@ async function RecipeDetailContent({
               }}
             />
           </div>
-        </div>
-      </div>
-
-      <div className="mx-auto mt-8 h-px w-full max-w-6xl bg-kitch-charcoal/10" />
-
-      <div className="mx-auto mt-10 grid max-w-5xl grid-cols-1 gap-10 lg:grid-cols-12 lg:items-start lg:gap-14">
-        <div className="lg:sticky lg:top-8 lg:col-span-4 lg:flex lg:flex-col lg:gap-6">
-          <RecipeIngredients items={ingredientRows ?? []} />
-          <RecipeNotes notes={recipe.notes} />
-        </div>
-        <div className="lg:col-span-8">
-          <RecipeDirections items={directionRows ?? []} />
         </div>
       </div>
     </div>
