@@ -11,7 +11,7 @@ export function WeekNavigator({
   nextHref: string;
 }) {
   return (
-    <div className="inline-flex shrink-0 items-center gap-1 rounded-full border border-kitch-charcoal/10 bg-white px-2 py-1.5 shadow-sm">
+    <div className="inline-flex shrink-0 items-center gap-1 self-start rounded-full border border-kitch-charcoal/10 bg-white px-2 py-1.5 shadow-sm">
       <Link
         href={prevHref}
         aria-label="Previous week"

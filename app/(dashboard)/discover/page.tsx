@@ -22,7 +22,7 @@ export default function DiscoverPage({
 }) {
   return (
     <div>
-      <h1 className="font-literata text-4xl font-semibold text-kitch-charcoal">
+      <h1 className="font-literata text-3xl font-semibold text-kitch-charcoal sm:text-4xl">
         Discover
       </h1>
       <p className="mt-2 text-sm text-kitch-grey">Find people to follow.</p>

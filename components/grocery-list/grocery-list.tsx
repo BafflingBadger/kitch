@@ -175,7 +175,7 @@ export function GroceryList({ initialItems }: { initialItems: GroceryItem[] }) {
                       event.preventDefault();
                       handleDelete(item.id);
                     }}
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-kitch-grey opacity-0 transition-opacity hover:bg-kitch-charcoal/10 hover:text-kitch-charcoal group-hover:opacity-100"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-kitch-grey transition-opacity hover:bg-kitch-charcoal/10 hover:text-kitch-charcoal focus-visible:opacity-100 can-hover:opacity-0 can-hover:group-hover:opacity-100"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>

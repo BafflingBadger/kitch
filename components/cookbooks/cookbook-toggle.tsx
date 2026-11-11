@@ -19,14 +19,14 @@ export function CookbookToggle({
 
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-literata text-3xl font-semibold text-kitch-charcoal">
+          <h1 className="font-literata text-2xl sm:text-3xl font-semibold text-kitch-charcoal">
             {greeting}
           </h1>
           <p className="mt-2 text-sm text-kitch-grey">{subtext}</p>
         </div>
-        <div className="inline-flex items-center rounded-full border border-kitch-charcoal/10 bg-kitch-cream-dark p-1">
+        <div className="inline-flex w-fit shrink-0 items-center rounded-full border border-kitch-charcoal/10 bg-kitch-cream-dark p-1">
           {(["personal", "following"] as const).map((value) => (
             <button
               key={value}
@@ -45,7 +45,7 @@ export function CookbookToggle({
         </div>
       </div>
 
-      <div className="mt-8">{tab === "personal" ? children : followingContent}</div>
+      <div className="mt-6 sm:mt-8">{tab === "personal" ? children : followingContent}</div>
     </div>
   );
 }

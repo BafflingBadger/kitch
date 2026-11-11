@@ -84,7 +84,12 @@ export function SettingsNav() {
   }, []);
 
   return (
-    <nav className="flex flex-col gap-1" aria-label="Settings sections">
+    // Below lg this sits above the cards, so it's a row that scrolls sideways
+    // rather than a tall list pushing the content down.
+    <nav
+      className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0"
+      aria-label="Settings sections"
+    >
       {SECTIONS.map(({ id, label, icon: Icon, danger }) => {
         const isActive = activeId === id;
 
@@ -103,7 +108,7 @@ export function SettingsNav() {
             }}
             aria-current={isActive ? "true" : undefined}
             className={cn(
-              "flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors",
+              "flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors",
               danger ? "text-kitch-red" : "text-kitch-charcoal",
               isActive
                 ? danger

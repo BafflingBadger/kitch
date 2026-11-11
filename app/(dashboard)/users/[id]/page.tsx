@@ -115,14 +115,14 @@ async function ProfileContent({ params }: { params: Promise<{ id: string }> }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
           <Avatar
             displayName={profile.display_name}
             avatarUrl={profile.profile_pic_url}
-            sizeClassName="h-16 w-16"
+            sizeClassName="h-14 w-14 sm:h-16 sm:w-16"
           />
-          <h1 className="font-literata text-3xl font-semibold text-kitch-charcoal">
+          <h1 className="min-w-0 break-words font-literata text-2xl font-semibold text-kitch-charcoal sm:text-3xl">
             {profile.display_name}
           </h1>
         </div>

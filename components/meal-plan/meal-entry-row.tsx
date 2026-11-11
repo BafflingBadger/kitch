@@ -82,7 +82,7 @@ export function MealEntryRow({ entry }: { entry: MealPlanRecipeEntry }) {
             await removeMealPlanEntry(entry.id);
           })
         }
-        className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/50 text-white opacity-0 backdrop-blur-sm transition-opacity hover:bg-black/70 group-hover:opacity-100 disabled:opacity-50"
+        className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-opacity hover:bg-black/70 focus-visible:opacity-100 disabled:opacity-50 can-hover:opacity-0 can-hover:group-hover:opacity-100"
       >
         <X className="h-3.5 w-3.5" />
       </button>

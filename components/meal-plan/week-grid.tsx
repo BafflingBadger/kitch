@@ -1,4 +1,5 @@
 import { DayColumn } from "@/components/meal-plan/day-column";
+import { WeekScroller } from "@/components/meal-plan/week-scroller";
 import type { MealPlanType } from "@/lib/meal-plan/constants";
 import type { FoodMacros, MacroTotals } from "@/lib/meal-plan/macros";
 
@@ -37,10 +38,10 @@ export interface MealPlanDay {
 
 export function WeekGrid({ days, isPremium }: { days: MealPlanDay[]; isPremium: boolean }) {
   return (
-    <div className="flex h-full gap-4 overflow-x-auto pb-2">
+    <WeekScroller>
       {days.map((day) => (
         <DayColumn key={day.dateStr} day={day} isPremium={isPremium} />
       ))}
-    </div>
+    </WeekScroller>
   );
 }

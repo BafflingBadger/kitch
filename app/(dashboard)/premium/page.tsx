@@ -36,7 +36,7 @@ async function PremiumContent({
         <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-kitch-orange-from to-kitch-orange-to text-white">
           <Sparkles className="h-6 w-6" />
         </span>
-        <h1 className="mt-4 font-literata text-4xl font-semibold text-kitch-charcoal">
+        <h1 className="mt-4 font-literata text-3xl font-semibold text-kitch-charcoal sm:text-4xl">
           Kitch Premium
         </h1>
         <p className="mt-2 max-w-md text-sm text-kitch-grey">

@@ -2,13 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Search, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowUpDown, Check, Pencil, Search, Trash2 } from "lucide-react";
 
 import { RecipeGrid, type RecipeGridItem } from "@/components/cookbooks/recipe-grid";
 import { EditCookbookDialog } from "@/components/cookbooks/edit-cookbook-dialog";
 import { DeleteCookbookDialog } from "@/components/cookbooks/delete-cookbook-dialog";
 import { FollowCookbookButton } from "@/components/cookbooks/follow-cookbook-button";
 import { Avatar } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
 const SORT_OPTIONS = [
@@ -89,10 +96,10 @@ export function RecipeSortToggle({
       <div className="flex items-start justify-between gap-4">
         <Link
           href={topBackHref}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-kitch-grey transition-colors hover:text-kitch-charcoal"
+          className="inline-flex min-w-0 items-center gap-1.5 text-sm font-medium text-kitch-grey transition-colors hover:text-kitch-charcoal"
         >
-          <ArrowLeft className="h-4 w-4" />
-          {topBackLabel}
+          <ArrowLeft className="h-4 w-4 shrink-0" />
+          <span className="truncate">{topBackLabel}</span>
         </Link>
         {cookbookId !== null && !readOnly ? (
           <div className="flex shrink-0 items-center gap-2">
@@ -101,10 +108,11 @@ export function RecipeSortToggle({
               trigger={
                 <button
                   type="button"
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-kitch-charcoal/10 px-4 py-2 text-sm font-medium text-kitch-charcoal transition-colors hover:bg-kitch-cream-dark"
+                  aria-label="Edit cookbook"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-kitch-charcoal/10 px-3 py-2 text-sm font-medium text-kitch-charcoal sm:px-4 transition-colors hover:bg-kitch-cream-dark"
                 >
                   <Pencil className="h-4 w-4" />
-                  Edit
+                  <span className="hidden sm:inline">Edit</span>
                 </button>
               }
             />
@@ -114,10 +122,11 @@ export function RecipeSortToggle({
               trigger={
                 <button
                   type="button"
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-kitch-red/20 px-4 py-2 text-sm font-medium text-kitch-red transition-colors hover:bg-kitch-red/10"
+                  aria-label="Delete cookbook"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-kitch-red/20 px-3 py-2 text-sm font-medium text-kitch-red sm:px-4 transition-colors hover:bg-kitch-red/10"
                 >
                   <Trash2 className="h-4 w-4" />
-                  Delete
+                  <span className="hidden sm:inline">Delete</span>
                 </button>
               }
             />
@@ -131,7 +140,7 @@ export function RecipeSortToggle({
         ) : null}
       </div>
 
-      <h1 className="mt-2 font-literata text-4xl font-semibold text-kitch-charcoal">{title}</h1>
+      <h1 className="mt-2 break-words font-literata text-3xl font-semibold text-kitch-charcoal sm:text-4xl">{title}</h1>
 
       {readOnly && ownerName && ownerId ? (
         <Link
@@ -143,12 +152,12 @@ export function RecipeSortToggle({
         </Link>
       ) : null}
 
-      <div className="mt-3 flex items-center justify-between gap-4">
+      <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
         <p className="text-sm text-kitch-grey">
           {recipeCountLabel} • {relativeUpdateLabel(filteredRecipes)}
         </p>
-        <div className="flex shrink-0 items-center gap-3">
-          <div className="flex w-56 items-center gap-2 rounded-full border border-kitch-charcoal/10 bg-kitch-cream-dark px-3.5 py-[11px] focus-within:border-kitch-red/40">
+        <div className="flex items-center gap-2 sm:gap-3 md:shrink-0">
+          <div className="flex min-w-0 flex-1 items-center gap-2 md:w-56 md:flex-none rounded-full border border-kitch-charcoal/10 bg-kitch-cream-dark px-3.5 py-[11px] focus-within:border-kitch-red/40">
             <Search className="h-4 w-4 shrink-0 text-kitch-grey" />
             <input
               type="text"
@@ -158,14 +167,46 @@ export function RecipeSortToggle({
               className="w-full bg-transparent text-sm text-kitch-charcoal placeholder:text-kitch-grey focus:outline-none"
             />
           </div>
-          <div className="inline-flex items-center rounded-full border border-kitch-charcoal/10 bg-kitch-cream-dark p-1">
+          {/* Phones: an icon beside the search that opens the sort options. */}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              aria-label={`Sort by: ${SORT_OPTIONS.find((option) => option.value === sort)?.label}`}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-kitch-charcoal/10 bg-kitch-cream-dark text-kitch-charcoal outline-none focus-visible:border-kitch-red/40 sm:hidden"
+            >
+              <ArrowUpDown className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-48 rounded-xl border border-kitch-charcoal/10 bg-white p-1.5 text-kitch-charcoal shadow-lg"
+            >
+              <DropdownMenuLabel className="px-2.5 pb-1 pt-1.5 text-xs font-semibold uppercase tracking-wide text-kitch-grey">
+                Sort by
+              </DropdownMenuLabel>
+              {SORT_OPTIONS.map((option) => (
+                <DropdownMenuItem
+                  key={option.value}
+                  onSelect={() => setSort(option.value)}
+                  className={cn(
+                    "flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 text-sm font-medium focus:bg-kitch-cream-dark",
+                    sort === option.value && "bg-kitch-peach/60",
+                  )}
+                >
+                  {option.label}
+                  {sort === option.value ? (
+                    <Check className="h-4 w-4 shrink-0 text-kitch-orange-to" />
+                  ) : null}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <div className="hidden w-fit shrink-0 items-center rounded-full border border-kitch-charcoal/10 bg-kitch-cream-dark p-1 sm:inline-flex">
             {SORT_OPTIONS.map((option) => (
               <button
                 key={option.value}
                 type="button"
                 onClick={() => setSort(option.value)}
                 className={cn(
-                  "rounded-full border px-4 py-1.5 text-sm font-medium transition-colors",
+                  "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors sm:px-4",
                   sort === option.value
                     ? "border-kitch-charcoal/10 bg-white text-kitch-charcoal shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
                     : "border-transparent text-kitch-grey hover:text-kitch-charcoal",

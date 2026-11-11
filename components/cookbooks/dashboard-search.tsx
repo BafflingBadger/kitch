@@ -224,7 +224,9 @@ export function DashboardSearch() {
         <div
           id="dashboard-search-results"
           role="listbox"
-          className="absolute inset-x-0 top-full z-50 pt-2"
+          // On phones the input shares the bar with the logo and buttons, so
+          // the results span the screen instead of the input's width.
+          className="absolute inset-x-0 top-full z-50 pt-2 max-sm:fixed max-sm:inset-x-3 max-sm:top-14"
         >
           <div className="overflow-hidden rounded-2xl border border-kitch-charcoal/10 bg-white shadow-lg">
             <div>

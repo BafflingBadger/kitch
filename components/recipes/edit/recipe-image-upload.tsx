@@ -67,10 +67,18 @@ export function RecipeImageUpload({
           onClick={() => inputRef.current?.click()}
           disabled={isUploading}
           aria-label="Change photo"
-          className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40 text-white opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-100"
+          className="group/photo absolute inset-0"
         >
-          <Camera className="h-6 w-6" />
-          <span className="text-sm font-medium">
+          {/* Hover devices get a full overlay on hover; touch screens, which
+              can't hover, get a pill that's always there. */}
+          <span className="absolute inset-0 hidden flex-col items-center justify-center gap-2 bg-black/40 text-white opacity-0 transition-opacity group-hover:opacity-100 group-disabled/photo:opacity-100 can-hover:flex">
+            <Camera className="h-6 w-6" />
+            <span className="text-sm font-medium">
+              {isUploading ? "Uploading…" : "Change photo"}
+            </span>
+          </span>
+          <span className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-black/55 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm can-hover:hidden">
+            <Camera className="h-3.5 w-3.5" />
             {isUploading ? "Uploading…" : "Change photo"}
           </span>
         </button>

@@ -39,7 +39,7 @@ export function CookbookGrid({
   };
 
   return (
-    <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-3 xl:grid-cols-4">
       <CookbookCard
         variant="hero"
         title="All Recipes"
@@ -65,7 +65,7 @@ export function CookbookGrid({
           trigger={
             <button
               type="button"
-              className="group flex h-[366px] flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-kitch-grey/30 text-center transition-colors hover:border-kitch-grey/50 hover:bg-kitch-cream-dark"
+              className="group flex h-[280px] flex-col items-center justify-center gap-3 rounded-2xl p-3 sm:h-[366px] border-2 border-dashed border-kitch-grey/30 text-center transition-colors hover:border-kitch-grey/50 hover:bg-kitch-cream-dark"
             >
               <span className="flex h-12 w-12 items-center justify-center rounded-full bg-kitch-cream-dark text-kitch-charcoal">
                 <Plus className="h-5 w-5" />

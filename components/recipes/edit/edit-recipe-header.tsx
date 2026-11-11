@@ -18,7 +18,7 @@ export function EditRecipeHeader({
     <div className="flex items-start justify-between gap-4">
       <Link
         href={backHref}
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-kitch-grey transition-colors hover:text-kitch-charcoal"
+        className="inline-flex min-w-0 items-center gap-1.5 text-sm font-medium text-kitch-grey transition-colors hover:text-kitch-charcoal"
       >
         <ArrowLeft className="h-4 w-4" />
         Cancel

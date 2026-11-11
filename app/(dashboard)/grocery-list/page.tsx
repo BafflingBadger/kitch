@@ -27,7 +27,7 @@ async function GroceryListContent() {
 
   return (
     <div>
-      <h1 className="font-literata text-4xl font-semibold text-kitch-charcoal">
+      <h1 className="font-literata text-3xl font-semibold text-kitch-charcoal sm:text-4xl">
         Grocery List
       </h1>
       <p className="mt-2 text-sm text-kitch-grey">

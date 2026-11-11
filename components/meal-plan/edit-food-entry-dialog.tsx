@@ -110,13 +110,13 @@ export function EditFoodEntryDialog({
                   onClick={() => update({ type })}
                   aria-pressed={selected}
                   className={cn(
-                    "flex items-center justify-center gap-1.5 rounded-full border py-1.5 text-sm font-medium transition-colors",
+                    "flex min-w-0 items-center justify-center gap-1.5 rounded-full border py-1.5 text-xs font-medium transition-colors sm:text-sm",
                     selected
                       ? "border-kitch-charcoal/10 bg-white text-kitch-charcoal shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
                       : "border-transparent text-kitch-grey hover:text-kitch-charcoal",
                   )}
                 >
-                  <Icon className={cn("h-3.5 w-3.5", selected && "text-kitch-red")} />
+                  <Icon className={cn("hidden h-3.5 w-3.5 shrink-0 sm:block", selected && "text-kitch-red")} />
                   {label}
                 </button>
               );

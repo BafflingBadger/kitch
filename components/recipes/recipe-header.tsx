@@ -27,19 +27,20 @@ export function RecipeHeader({
     <div className="flex items-center justify-between gap-4">
       <Link
         href={backHref}
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-kitch-grey transition-colors hover:text-kitch-charcoal"
+        className="inline-flex min-w-0 items-center gap-1.5 text-sm font-medium text-kitch-grey transition-colors hover:text-kitch-charcoal"
       >
-        <ArrowLeft className="h-4 w-4" />
-        {backLabel}
+        <ArrowLeft className="h-4 w-4 shrink-0" />
+        <span className="truncate">{backLabel}</span>
       </Link>
       {isOwner ? (
         <div className="flex shrink-0 items-center gap-2">
           <Link
             href={editHref}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-kitch-charcoal/10 px-4 py-2 text-sm font-medium text-kitch-charcoal transition-colors hover:bg-kitch-cream-dark"
+            aria-label="Edit recipe"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-kitch-charcoal/10 px-3 py-2 text-sm font-medium text-kitch-charcoal sm:px-4 transition-colors hover:bg-kitch-cream-dark"
           >
             <Pencil className="h-4 w-4" />
-            Edit
+            <span className="hidden sm:inline">Edit</span>
           </Link>
           <DeleteRecipeDialog
             recipeId={recipeId}
@@ -48,18 +49,19 @@ export function RecipeHeader({
             trigger={
               <button
                 type="button"
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-kitch-red/20 px-4 py-2 text-sm font-medium text-kitch-red transition-colors hover:bg-kitch-red/10"
+                aria-label="Delete recipe"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-kitch-red/20 px-3 py-2 text-sm font-medium text-kitch-red sm:px-4 transition-colors hover:bg-kitch-red/10"
               >
                 <Trash2 className="h-4 w-4" />
-                Delete
+                <span className="hidden sm:inline">Delete</span>
               </button>
             }
           />
         </div>
       ) : ownerName ? (
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <Avatar displayName={ownerName} avatarUrl={ownerAvatarUrl} sizeClassName="h-6 w-6" />
-          <span className="text-sm text-kitch-grey">By {ownerName}</span>
+          <span className="truncate text-sm text-kitch-grey">By {ownerName}</span>
         </div>
       ) : null}
     </div>

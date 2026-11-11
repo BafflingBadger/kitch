@@ -160,11 +160,11 @@ async function MealPrepContent({
   return (
     // Fills the screen below the topbar so each day scrolls its own meals; the
     // min height keeps days usable on short windows, where the page scrolls.
-    <div data-fill-screen className="flex h-full min-h-[560px] flex-col">
-      <div className="flex items-start justify-between gap-4">
+    <div data-fill-screen className="flex h-full min-h-[480px] flex-col sm:min-h-[560px]">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="font-literata text-4xl font-semibold text-kitch-charcoal">Meal Plan</h1>
-          <p className="mt-2 text-sm text-kitch-grey">
+          <h1 className="font-literata text-3xl font-semibold text-kitch-charcoal sm:text-4xl">Meal Plan</h1>
+          <p className="mt-2 hidden text-sm text-kitch-grey sm:block">
             Plan out your breakfasts, lunches, dinners, and snacks for the week.
           </p>
         </div>
@@ -174,7 +174,7 @@ async function MealPrepContent({
           nextHref={nextHref}
         />
       </div>
-      <div className="mt-6 min-h-0 flex-1">
+      <div className="mt-4 min-h-0 flex-1 sm:mt-6">
         <WeekGrid days={days} isPremium={entitlement.isPremium} />
       </div>
     </div>

@@ -9,8 +9,19 @@ import { GroceryListDialog } from "@/components/recipes/grocery-list-dialog";
 import type { RecipeIngredientItem } from "@/components/recipes/recipe-ingredients";
 import { cn } from "@/lib/utils";
 
+// Four across, each a round icon with its label underneath. Between sm and lg,
+// where the recipe is one wide column, a row of icon-and-label buttons split by
+// dividers instead; from lg the details column is too narrow for that row.
 const buttonClassName =
-  "flex flex-1 items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-kitch-grey transition-colors hover:text-kitch-charcoal";
+  "group flex flex-1 flex-col items-center justify-center gap-1.5 px-1 py-1 text-xs font-medium text-kitch-grey transition-colors hover:text-kitch-charcoal sm:max-lg:flex-row sm:max-lg:gap-2 sm:max-lg:px-3 sm:max-lg:py-2 sm:max-lg:text-sm";
+
+function ActionIcon({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="flex h-11 w-11 items-center justify-center rounded-full border border-kitch-charcoal/10 bg-white text-kitch-charcoal shadow-[0_1px_2px_rgba(0,0,0,0.04)] sm:max-lg:h-auto sm:max-lg:w-auto sm:max-lg:border-0 sm:max-lg:bg-transparent sm:max-lg:text-current sm:max-lg:shadow-none">
+      {children}
+    </span>
+  );
+}
 
 export function RecipeActionButtons({
   recipeId,
@@ -38,12 +49,12 @@ export function RecipeActionButtons({
   };
 
   return (
-    <div className="grid grid-cols-2 divide-kitch-charcoal/10 sm:grid-cols-4 sm:divide-x">
+    <div className="grid grid-cols-4 divide-kitch-charcoal/10 sm:max-lg:divide-x">
       <ManageCookbooksDialog
         recipeId={recipeId}
         trigger={
           <button type="button" className={buttonClassName}>
-            <BookOpen className="h-4 w-4" />
+            <ActionIcon><BookOpen className="h-4 w-4" /></ActionIcon>
             Cookbooks
           </button>
         }
@@ -52,7 +63,7 @@ export function RecipeActionButtons({
         recipe={{ id: recipeId, name: recipeName, imageUrl }}
         trigger={
           <button type="button" className={buttonClassName}>
-            <Calendar className="h-4 w-4" />
+            <ActionIcon><Calendar className="h-4 w-4" /></ActionIcon>
             Meal Plan
           </button>
         }
@@ -62,7 +73,7 @@ export function RecipeActionButtons({
         ingredients={ingredients}
         trigger={
           <button type="button" className={buttonClassName}>
-            <ShoppingCart className="h-4 w-4" />
+            <ActionIcon><ShoppingCart className="h-4 w-4" /></ActionIcon>
             Grocery List
           </button>
         }
@@ -74,12 +85,12 @@ export function RecipeActionButtons({
       >
         {copied ? (
           <>
-            <Check className="h-4 w-4" />
+            <ActionIcon><Check className="h-4 w-4" /></ActionIcon>
             Copied!
           </>
         ) : (
           <>
-            <Share2 className="h-4 w-4" />
+            <ActionIcon><Share2 className="h-4 w-4" /></ActionIcon>
             Share
           </>
         )}

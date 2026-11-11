@@ -9,8 +9,9 @@ import { cn } from "@/lib/utils";
 export function DayColumn({ day, isPremium }: { day: MealPlanDay; isPremium: boolean }) {
   return (
     <div
+      data-today={day.isToday ? "" : undefined}
       className={cn(
-        "flex min-w-[220px] flex-1 flex-col rounded-2xl border p-4 shadow-sm",
+        "flex min-w-[85%] flex-1 snap-start flex-col rounded-2xl border p-4 shadow-sm sm:min-w-[45%] lg:min-w-[220px]",
         day.isToday
           ? "border-kitch-red/30 bg-kitch-red/5"
           : "border-kitch-charcoal/10 bg-white",

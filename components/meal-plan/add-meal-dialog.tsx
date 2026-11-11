@@ -173,10 +173,10 @@ export function AddMealDialog(props: AddMealDialogProps) {
         className={cn(
           "p-0 sm:max-w-xl",
           isRecipeGridStep
-            ? "flex h-[85vh] flex-col"
+            ? "flex h-[85dvh] flex-col"
             : isQuickStep
-              ? "flex max-h-[85vh] flex-col"
-              : "max-h-[85vh] overflow-y-auto",
+              ? "flex max-h-[85dvh] flex-col"
+              : "max-h-[85dvh] overflow-y-auto",
         )}
       >
         <DialogHeader
@@ -332,7 +332,7 @@ export function AddMealDialog(props: AddMealDialogProps) {
               {/* The search sits on the subheader's line, right above the sort toggle.
                   Sharing the toggle's grid column, the open field grows to its width. */}
               <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-3">
-                <DialogDescription className="self-start">Pick a recipe to add as {selectedType}.</DialogDescription>
+                <DialogDescription className="col-span-2 self-start sm:col-span-1">Pick a recipe to add as {selectedType}.</DialogDescription>
                 <div className="hidden justify-end pt-1 sm:flex">
                   <div
                     className={cn(
@@ -375,15 +375,15 @@ export function AddMealDialog(props: AddMealDialogProps) {
                     )}
                   </div>
                 </div>
-                <div className="hidden justify-self-start sm:block">
+                <div className="col-span-2 min-w-0 sm:col-span-1 sm:justify-self-start">
                   <DropdownMenu>
-                    <DropdownMenuTrigger className="flex h-11 w-[236px] shrink-0 items-center justify-between rounded-full border border-kitch-charcoal/15 bg-kitch-cream px-4 text-sm text-kitch-charcoal shadow-sm outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                    <DropdownMenuTrigger className="flex h-11 w-full shrink-0 items-center justify-between rounded-full sm:w-[236px] border border-kitch-charcoal/15 bg-kitch-cream px-4 text-sm text-kitch-charcoal shadow-sm outline-none focus-visible:ring-1 focus-visible:ring-ring">
                       <span className="truncate">{selectedCookbookLabel}</span>
                       <ChevronDown className="h-4 w-4 shrink-0 text-kitch-grey" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                       align="start"
-                      className="w-[236px] rounded-xl border border-kitch-charcoal/10 bg-white p-1.5 text-kitch-charcoal shadow-lg"
+                      className="w-[var(--radix-dropdown-menu-trigger-width)] rounded-xl border border-kitch-charcoal/10 bg-white p-1.5 text-kitch-charcoal shadow-lg"
                     >
                       <DropdownMenuItem
                         onSelect={() => setSelectedCookbookId("all")}
@@ -418,7 +418,7 @@ export function AddMealDialog(props: AddMealDialogProps) {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-                <div className="hidden sm:block">
+                <div className="col-span-2 justify-self-start sm:col-span-1 sm:justify-self-end">
                   <div className="inline-flex items-center rounded-full border border-kitch-charcoal/10 bg-kitch-cream p-1">
                     {SORT_OPTIONS.map((option) => (
                       <button
@@ -426,7 +426,7 @@ export function AddMealDialog(props: AddMealDialogProps) {
                         type="button"
                         onClick={() => setSortMode(option.value)}
                         className={cn(
-                          "rounded-full border px-4 py-1.5 text-sm font-medium transition-colors",
+                          "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors sm:px-4",
                           sortMode === option.value
                             ? "border-kitch-charcoal/10 bg-white text-kitch-charcoal shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
                             : "border-transparent text-kitch-grey hover:text-kitch-charcoal",

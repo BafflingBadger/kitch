@@ -27,7 +27,7 @@ export function MacroInputs({
   onChange: (field: MacroField, value: string) => void;
 }) {
   return (
-    <div className="grid grid-cols-4 gap-2">
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
       {MACRO_FIELDS.map(({ field, label, unit }) => (
         <label key={field} className="flex min-w-0 flex-col gap-1">
           <span className="text-[10px] font-semibold uppercase tracking-wide text-kitch-grey">

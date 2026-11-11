@@ -49,7 +49,7 @@ export function RecipeNutrition({ nutrition }: { nutrition: RecipeNutritionFacts
           <span className="text-sm font-medium text-kitch-grey">kcal</span>
         </p>
 
-        <dl className="flex flex-1 gap-6">
+        <dl className="flex flex-1 flex-wrap gap-x-6 gap-y-3">
           {macroCalories.map((macro) => (
             <div key={macro.key} className="flex flex-col gap-0.5">
               <dt className="flex items-center gap-1.5 text-xs text-kitch-grey">

@@ -12,7 +12,39 @@ import {
 
 import { cn } from "@/lib/utils";
 
-const navItems = [
+export type NavItem = {
+  href: string;
+  label: string;
+  /** Used in the phone tab bar, where a long label wouldn't fit. */
+  shortLabel?: string;
+  icon: typeof BookOpen;
+  activePrefixes?: string[];
+};
+
+export function isNavItemActive(item: NavItem, pathname: string) {
+  return (
+    pathname === item.href ||
+    pathname.startsWith(`${item.href}/`) ||
+    (item.activePrefixes?.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    ) ??
+      false)
+  );
+}
+
+/**
+ * Personal/Following is local component state, not part of the URL. Next's
+ * client-side router cache can keep a previously-visited /cookbooks page
+ * instance alive (still on Following) even when navigating in from another
+ * route, so a normal Link transition doesn't reliably land on Personal --
+ * force a full reload so the page always remounts fresh there.
+ */
+export function reloadToCookbooks(event: React.MouseEvent) {
+  event.preventDefault();
+  window.location.href = "/cookbooks";
+}
+
+export const navItems: NavItem[] = [
   {
     href: "/cookbooks",
     label: "Recipes",
@@ -20,34 +52,20 @@ const navItems = [
     activePrefixes: ["/recipes", "/users"],
   },
   { href: "/meal-prep", label: "Meal Plan", icon: Calendar },
-  { href: "/grocery-list", label: "Grocery List", icon: ShoppingCart },
+  { href: "/grocery-list", label: "Grocery List", shortLabel: "Groceries", icon: ShoppingCart },
   { href: "/discover", label: "Discover", icon: Compass },
 ];
 
-type NavItem = {
-  href: string;
-  label: string;
-  icon: typeof BookOpen;
-  activePrefixes?: string[];
-};
 
 export function CookbookSidebar({ profile }: { profile: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-72 shrink-0 flex-col justify-between border-r border-kitch-charcoal/10 bg-kitch-cream-dark p-6">
+    <aside className="hidden h-dvh w-72 lg:flex shrink-0 flex-col justify-between border-r border-kitch-charcoal/10 bg-kitch-cream-dark p-6">
       <div>
         <Link
           href="/cookbooks"
-          onClick={(event) => {
-            // Personal/Following is local component state, not part of the URL. Next's
-            // client-side router cache can keep a previously-visited /cookbooks page
-            // instance alive (still on Following) even when navigating in from another
-            // route, so a normal Link transition doesn't reliably land on Personal —
-            // force a full reload so the page always remounts fresh there.
-            event.preventDefault();
-            window.location.href = "/cookbooks";
-          }}
+          onClick={reloadToCookbooks}
           // Gap is ~1/3 of the 36px wordmark.
           className="flex items-center gap-3"
         >
@@ -79,12 +97,7 @@ export function CookbookSidebar({ profile }: { profile: React.ReactNode }) {
 }
 
 function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
-  const isActive =
-    pathname === item.href ||
-    pathname.startsWith(`${item.href}/`) ||
-    item.activePrefixes?.some(
-      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-    );
+  const isActive = isNavItemActive(item, pathname);
   const Icon = item.icon;
 
   return (

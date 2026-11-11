@@ -76,7 +76,7 @@ export function RecipeCard({
     <Link
       href={href}
       prefetch={false}
-      className="group relative flex h-[366px] flex-col overflow-hidden rounded-2xl border border-kitch-charcoal/10 bg-white shadow-sm transition-shadow hover:shadow-md"
+      className="group relative flex h-[280px] flex-col sm:h-[366px] overflow-hidden rounded-2xl border border-kitch-charcoal/10 bg-white shadow-sm transition-shadow hover:shadow-md"
     >
       {!ownerId ? (
         <RecipeCardMenu
@@ -87,25 +87,25 @@ export function RecipeCard({
           cookbookTitle={backLabel ?? ""}
         />
       ) : null}
-      <div className="h-[190px] shrink-0 overflow-hidden">
+      <div className="h-[140px] shrink-0 overflow-hidden sm:h-[190px]">
         <CoverImage imageUrl={imageUrl} alt={title} />
       </div>
-      <div className="flex flex-1 flex-col justify-between p-5">
-        <h3 className="line-clamp-3 font-literata text-xl font-semibold text-kitch-charcoal">
+      <div className="flex flex-1 flex-col justify-between p-3 sm:p-5">
+        <h3 className="line-clamp-3 font-literata text-base sm:text-xl font-semibold text-kitch-charcoal">
           {title}
         </h3>
-        <div className="mt-4 flex items-center justify-between">
+        <div className="mt-3 flex items-center justify-between gap-2 sm:mt-4">
           <span
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium",
+              "inline-flex min-w-0 items-center gap-1 rounded-full border px-2 py-1 text-xs font-medium sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-sm",
               className,
             )}
           >
-            <Icon className="h-4 w-4" />
-            {label}
+            <Icon className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
+            <span className="truncate">{label}</span>
           </span>
           {rating > 0 ? (
-            <span className="flex items-center gap-1 text-base font-semibold text-kitch-charcoal">
+            <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-kitch-charcoal sm:text-base">
               <Star className="h-4 w-4 fill-red-500 text-red-500" />
               {rating}
             </span>

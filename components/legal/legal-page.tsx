@@ -15,7 +15,7 @@ export function LegalPage({
   return (
     <main className="min-h-screen bg-kitch-cream px-6 py-16">
       <article className="mx-auto w-full max-w-2xl">
-        <h1 className="font-literata text-4xl font-semibold text-kitch-charcoal">
+        <h1 className="font-literata text-3xl font-semibold text-kitch-charcoal sm:text-4xl">
           {title}
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-kitch-grey">{intro}</p>

@@ -31,7 +31,7 @@ export function AuthCard({
             priority
           />
         </div>
-        <h1 className="mt-5 font-literata text-4xl font-bold text-kitch-charcoal">
+        <h1 className="mt-5 font-literata text-3xl font-bold text-kitch-charcoal sm:text-4xl">
           {title}
         </h1>
         {description ? (

@@ -138,7 +138,7 @@ export function EditCookbookDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
       <DialogContent
-        className="flex max-h-[85vh] flex-col p-0 sm:max-w-xl"
+        className="flex max-h-[85dvh] flex-col p-0 sm:max-w-xl"
         onClick={(event) => event.stopPropagation()}
       >
         <DialogHeader className="shrink-0 gap-1 p-6 pb-3 text-left">
