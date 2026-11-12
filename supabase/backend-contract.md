@@ -165,6 +165,13 @@ after `created_at`, so iOS needs no extra query.
   `Recipe_Write`. No ingredients → estimated from the dish name; nothing to go
   on → zeros. A failed write leaves zeros; the import still succeeds. The import
   response now also includes these keys.
+- **Web (non-social) imports prefer the page's own nutrition.** When the page's
+  Schema.org `Recipe.nutrition` publishes calories, protein, fat or carbs, those
+  values win field by field (parsed in
+  `supabase/functions/import-recipe/schema-nutrition.ts`); the AI estimate only
+  fills fields the page leaves out. Servings then come from the page's
+  `recipeYield`, and `macros_confidence` is null because the numbers aren't
+  purely the AI's.
 - **Saving a recipe never estimates.** The owner types the numbers, or uses
   **Auto Estimate** (Premium): call `estimate-recipe-macros` with the editor's
   unsaved `{ name, ingredients: [string], servings? }`. It returns `{ macros: {

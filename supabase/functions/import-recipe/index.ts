@@ -6,7 +6,8 @@ import { getIngredientKeywords, resolveKeyword, type IngredientKeywords } from "
 import { parse as parseHTML } from "npm:node-html-parser"
 import { decodeBase64 } from "jsr:@std/encoding/base64"
 import { createClient } from "https://esm.sh/@supabase/supabase-js"
-import { clampRecipeMacros } from "../_shared/recipe-macros.ts"
+import { clampRecipeMacros, type RecipeMacros } from "../_shared/recipe-macros.ts"
+import { mergePageNutrition, parseSchemaNutrition } from "./schema-nutrition.ts"
 
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
@@ -231,7 +232,7 @@ async function buildRecipe(scrapedData: any, source: RecipeSource, urlText: stri
       directions,
       source_url: urlText,
       source_text: websiteName,
-      ...clampRecipeMacros(formattedData.macros, parseServings(recipeJSON.recipeYield)),
+      ...webRecipeMacros(recipeJSON, formattedData.macros),
       cookbooks: [],
       rating: 0,
       notes: null,
@@ -775,6 +776,14 @@ async function enforceMonthlyImportCeiling(
     }),
     { status: 429, headers: { "Content-Type": "application/json" } }
   )
+}
+
+/** A web recipe's macros: the page's published nutrition, with the AI filling any gaps. */
+function webRecipeMacros(recipeJSON: any, aiMacros: unknown): RecipeMacros {
+  const pageServings = parseServings(recipeJSON.recipeYield)
+  const page = parseSchemaNutrition(recipeJSON.nutrition)
+  if (Object.keys(page).length > 0) console.info(`Using page nutrition: ${JSON.stringify(page)}`)
+  return mergePageNutrition(clampRecipeMacros(aiMacros, pageServings), page, pageServings)
 }
 
 /** Schema.org `recipeYield` can be a number, a string or an array of either. */
